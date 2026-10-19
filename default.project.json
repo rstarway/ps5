@@ -1,0 +1,65 @@
+{
+  "name": "PS5Sandbox",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "PS5": {
+        "$path": "src/shared/PS5"
+      },
+      "PS5Apps": {
+        "$path": "src/apps"
+      },
+      "PS5Assets": {
+        "$className": "Folder"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "PS5Server": {
+        "$path": "src/server/PS5Server.server.luau"
+      },
+      "ChillZone": {
+        "$path": "src/server/ChillZone.server.luau"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "PS5Client": {
+          "$path": "src/client/PS5Client.client.luau"
+        }
+      }
+    },
+    "Players": {
+      "$className": "Players",
+      "$properties": {
+        "CharacterAutoLoads": true
+      }
+    },
+    "SoundService": {
+      "$className": "SoundService"
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "Terrain": {
+        "$className": "Terrain",
+        "$properties": {
+          "Decoration": false,
+          "WaterWaveSize": 0.12,
+          "WaterReflectance": 0.7,
+          "WaterTransparency": 0.45
+        }
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "Technology": "Future",
+        "Brightness": 1.6,
+        "ClockTime": 19.3
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
+return {
+	id = "night_spider",
+	title = "Night Spider",
+	category = "game", -- game | media | app
+	genre = "Action",
+	developer = "PS5 Sandbox",
+	version = "1.0",
+	order = 8,
+	description = "Swing through a neon city on your webs, run up skyscrapers and stop street crime.",
+	icon = "🕷",
+	colors = { "#E0213B", "#101A3A" },
+	controls = {
+		{ "Stick / WASD", "Run, steer in the air" },
+		{ "✕ / Space", "Jump; hold in the air to swing" },
+		{ "✕ on a wall", "Leap off the wall" },
+		{ "□ / F", "Punch (3 hits = finisher)" },
+		{ "△ / R", "Shoot web (stuns a thug)" },
+		{ "○ / Backspace", "Dodge" },
+		{ "L1 R1 / Q E, right stick", "Turn camera" },
+		{ "OPTIONS / O", "Pause" },
+	},
+	trophies = {
+		{ id = "first_swing", name = "Swing Into Action", description = "Swing on a web for the first time", grade = "bronze" },
+		{ id = "wall_crawler", name = "Up the Wall", description = "Run 80 studs up a wall in one go", grade = "bronze" },
+		{ id = "skyline", name = "Top of the City", description = "Stand on top of Night Tower", grade = "bronze" },
+		{ id = "first_crime", name = "Night Watch", description = "Stop your first crime", grade = "bronze" },
+		{ id = "tangled", name = "Tangled Up", description = "Web 15 thugs", grade = "bronze" },
+		{ id = "velocity", name = "Terminal Velocity", description = "Reach a speed of 150", grade = "silver" },
+		{ id = "untouchable", name = "Untouchable", description = "Stop a crime without taking damage", grade = "silver", hidden = true },
+		{ id = "hero", name = "Neighborhood Hero", description = "Stop 10 crimes", grade = "silver" },
+		{ id = "collector", name = "Token Hunter", description = "Find all 20 spider tokens on the rooftops", grade = "gold" },
+		{ id = "platinum", name = "Night Legend", description = "Earn every Night Spider trophy", grade = "platinum" },
+	},
+}
