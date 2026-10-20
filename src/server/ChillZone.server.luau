@@ -622,7 +622,7 @@ for _, plr in Players:GetPlayers() do
 end
 
 -- Тёплый вечер: солнце только что село, небо ещё светлое, во дворе горят обычные тёплые лампы
-Lighting.ClockTime = 18.05
+Lighting.ClockTime = 17.88
 Lighting.GeographicLatitude = 25
 Lighting.Brightness = 1.8
 Lighting.Ambient = rgb(46, 44, 52)
@@ -632,12 +632,12 @@ Lighting.EnvironmentSpecularScale = 0.7
 Lighting.ShadowSoftness = 0.25
 Lighting.ExposureCompensation = 0.15
 local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-atmosphere.Density = 0.32
-atmosphere.Offset = 0.12
-atmosphere.Color = rgb(206, 184, 166)
-atmosphere.Decay = rgb(104, 92, 110)
-atmosphere.Glare = 0.15
-atmosphere.Haze = 1.4
+atmosphere.Density = 0.3
+atmosphere.Offset = 0.15
+atmosphere.Color = rgb(236, 196, 168)
+atmosphere.Decay = rgb(186, 116, 98) -- тёплый закатный горизонт (с холодным небо в сумерках зеленело)
+atmosphere.Glare = 0.4
+atmosphere.Haze = 1.2
 atmosphere.Parent = Lighting
 -- Без Bloom/SunRays/цветокоррекции: со свечением мир и игры пересвечивались
 for _, e in Lighting:GetChildren() do

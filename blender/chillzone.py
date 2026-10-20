@@ -525,8 +525,8 @@ def cozy():
 # Plot: lawn x -78.8..78.8, z -43.8..113.8 inside the hedge. Ground (terrain) is flat at y = 0.
 SPAWN = (0, 0.5, 104)
 FIRE = (-50, 0, -6)
-POOL = (36, 64, 36, 56)  # inner water rectangle x0, x1, z0, z1 (aligned to the 4-stud terrain grid)
-DECK = (30, 76, 28, 64)  # teak deck around it
+POOL = (36, 68, 36, 60)  # inner water rectangle x0, x1, z0, z1 (aligned to the 4-stud terrain grid)
+DECK = (15, 70, 24, 35)  # one teak deck from the house terrace to the pool coping
 CARPORT = (-62, -38, 30, 58)
 PLOT = (-78.8, 78.8, -43.8, 113.8)
 
@@ -584,12 +584,11 @@ def driveway():
 
 
 def side_paths():
-    """Stepping pavers from the terrace to the fire lounge (left); a teak boardwalk to the pool deck (right)."""
+    """Stepping pavers from the terrace to the fire lounge (left). On the right the pool deck meets the terrace."""
     for x in (-18.6, -22.8, -27, -31.2, -35.4, -39.6):
         box("Paver", (3, 0.3, 3), (x, 0.15, 24.5))
     for z in (20.3, 16.1, 11.9, 7.7):
         box("Paver", (3, 0.3, 3), (-43.8, 0.15, z))
-    solid(box("Deck", (19, 0.5, 4), (24.5, 0.25, 26)))
 
 
 def fire_lounge():
@@ -608,7 +607,8 @@ def fire_lounge():
 
 
 def pool():
-    """Pool: tiled basin (water is terrain, filled by the server), stone coping, teak deck, loungers."""
+    """Pool: tiled basin (water is terrain, filled by the server). A slim stone coping all round, flush with
+    the lawn on three sides; one wide teak deck on the house side with three loungers facing the water."""
     x0, x1, z0, z1 = POOL
     special(box("Marker", (1, 1, 1), ((x0 + x1) / 2, -2, (z0 + z1) / 2)), "Pool", hidden=True,
             attrs={"X0": x0, "X1": x1, "Z0": z0, "Z1": z1, "Bottom": -4.2, "Surface": -0.4})
@@ -621,22 +621,19 @@ def pool():
         box("PoolTile", (1, 4.6, d), (x, -2.3, cz))
     special(box("PoolTile", (0.1, 0.6, 3), (x0 + 0.05, -2.2, cz)), "PoolLight",
             light=light((220, 236, 255), 16, 0.8, surface="Right", angle=120))
-    # coping ring (top 0.6) and deck (top 0.5) around it; the deck strips stop at the coping
-    solid(box("Coping", (w + 2, 0.6, 1), (cx, 0.3, z0 - 0.5)))
-    solid(box("Coping", (w + 2, 0.6, 1), (cx, 0.3, z1 + 0.5)))
-    solid(box("Coping", (1, 0.6, d), (x0 - 0.5, 0.3, cz)))
-    solid(box("Coping", (1, 0.6, d), (x1 + 0.5, 0.3, cz)))
+    # coping and deck share one level (top 0.35), so there are no steps around the water
+    top = 0.35
+    for z in (z0 - 0.5, z1 + 0.5):
+        solid(box("Coping", (w + 2, top, 1), (cx, top / 2, z)))
+    for x in (x0 - 0.5, x1 + 0.5):
+        solid(box("Coping", (1, top, d), (x, top / 2, cz)))
     dx0, dx1, dz0, dz1 = DECK
-    cx0, cx1, cz0, cz1 = x0 - 1, x1 + 1, z0 - 1, z1 + 1  # outer edge of the coping
-    solid(box("Deck", (dx1 - dx0, 0.5, cz0 - dz0), ((dx0 + dx1) / 2, 0.25, (dz0 + cz0) / 2)))
-    solid(box("Deck", (dx1 - dx0, 0.5, dz1 - cz1), ((dx0 + dx1) / 2, 0.25, (cz1 + dz1) / 2)))
-    solid(box("Deck", (cx0 - dx0, 0.5, cz1 - cz0), ((dx0 + cx0) / 2, 0.25, cz)))
-    solid(box("Deck", (dx1 - cx1, 0.5, cz1 - cz0), ((cx1 + dx1) / 2, 0.25, cz)))
-    ex = (cx1 + dx1) / 2  # middle of the wide east deck
-    for z in (cz - 6, cz + 6):  # feet towards the water
-        asset("Lounger", (ex, 0.5, z), yaw=270, size=7, fit="length", footprint=(7.1, 2.8))
-    asset("Umbrella", (ex, 0.5, cz), size=9, footprint=(2, 2))
-    asset("SideTable", (ex + 3, 0.5, cz), size=1.6, footprint=(1.6, 1.6))
+    solid(box("Deck", (dx1 - dx0, top, dz1 - dz0), ((dx0 + dx1) / 2, top / 2, (dz0 + dz1) / 2)))
+    # three loungers in a row, feet towards the water (+Z), umbrellas between them
+    for x in (cx - 8, cx, cx + 8):
+        asset("Lounger", (x, top, dz0 + 4.4), yaw=0, size=7, fit="length", footprint=(2.8, 7.1))
+    for x in (cx - 4, cx + 4):
+        asset("Umbrella", (x, top, dz0 + 3), size=9, footprint=(2, 2))
 
 
 def garden():
@@ -670,13 +667,13 @@ def upgrades():
         asset("CherryTree", (-30, 0, 100), size=14, footprint=(10, 10))
         asset("CherryTree", (40, 0, 104), yaw=120, size=13, footprint=(10, 10))
     with tier(4):  # Lounge: hot tub next to the pool deck, an outdoor kitchen by the boardwalk
-        asset("HotTub", (66, 0, 20), size=8, fit="length", footprint=(8.2, 8.2))
-        special(box("Marker", (1, 1, 1), (66, 3, 20)), "HotTub", hidden=True)
+        asset("HotTub", (71, 0, 17), size=8, fit="length", footprint=(8.2, 8.2))
+        special(box("Marker", (1, 1, 1), (71, 3, 17)), "HotTub", hidden=True)
         OBJECTS[-1].hide_render = True
         asset("BBQIsland", (44, 0, 18), size=10, fit="length", footprint=(10.2, 3.8))
     with tier(5):  # Luxury: a sports car on the driveway, a daybed on the pool deck, a bronze sculpture
         asset("SportsCar", (-50, 0.3, 74), yaw=180, size=15, fit="length", footprint=(6.5, 15.5))
-        asset("Daybed", (50, 0.5, 60.5), size=7, fit="length", footprint=(7.2, 6.4))
+        asset("Daybed", (73, 0, 67), yaw=270, size=7, fit="length", footprint=(6.4, 7.2))
         asset("Sculpture", (-20, 0, 50), size=7, footprint=(3, 3))
     with tier(6):  # Legend: rooftop terrace with a glass railing and loungers, a golden trophy statue on the lawn
         y = 18.25  # top of the roof gravel; the railing stands on the slab edge (18.2)

@@ -58,7 +58,7 @@
       "Terrain": {
         "$className": "Terrain",
         "$properties": {
-          "Decoration": true,
+          "Decoration": false,
           "WaterWaveSize": 0.12,
           "WaterReflectance": 0.7,
           "WaterTransparency": 0.45
