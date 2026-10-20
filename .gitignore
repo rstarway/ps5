@@ -1,3 +1,5 @@
 target/
 *.blend1
 __pycache__/
+*.rbxlx.lock
+*.rbxl.lock

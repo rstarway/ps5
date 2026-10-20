@@ -331,6 +331,12 @@ function WorldFX.Intro(origin, done)
 		task.delay(0.7, function()
 			gui:Destroy()
 		end)
+		-- персонаж мог смениться за время пролёта: привязываем камеру к текущему
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			camera.CameraSubject = humanoid
+		end
 		camera.CameraType = Enum.CameraType.Custom
 		done()
 	end

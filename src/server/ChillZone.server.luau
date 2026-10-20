@@ -9,6 +9,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 
+-- Сборка шаблона (меши из Creator Store) занимает секунды; без этого персонаж
+-- появлялся над пустотой и разбивался ниже FallenPartsDestroyHeight. Спавн ниже, в createZone.
+game:GetService("Players").CharacterAutoLoads = false
+
 local zone = Instance.new("Model")
 zone.Name = "ChillZone"
 
@@ -386,6 +390,25 @@ local function createZone(player)
 	return state
 end
 
+local function onPlayerAdded(player)
+	-- автоспавн выключен, поэтому возрождение после смерти тоже на нас
+	player.CharacterAdded:Connect(function(character)
+		character:WaitForChild("Humanoid").Died:Once(function()
+			task.wait(Players.RespawnTime)
+			if player.Parent and player.Character == character then
+				player:LoadCharacter()
+			end
+		end)
+	end)
+	local ok, err = pcall(createZone, player)
+	if not ok then
+		warn("[PS5] Chill zone failed for", player.Name, err)
+	end
+	if player.Parent and not player.Character then
+		player:LoadCharacter()
+	end
+end
+
 local function removeZone(player)
 	local state = zones[player.UserId]
 	if not state then
@@ -420,13 +443,13 @@ visitRemote.OnServerEvent:Connect(function(player, targetUserId)
 	sendTo(player, target)
 end)
 
-Players.PlayerAdded:Connect(createZone)
+Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(function(player)
 	removeZone(player)
 	lastVisit[player] = nil
 end)
 for _, plr in Players:GetPlayers() do
-	task.spawn(createZone, plr)
+	task.spawn(onPlayerAdded, plr)
 end
 
 -- Вечернее освещение и постобработка

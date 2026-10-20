@@ -10,7 +10,8 @@ local AUTOSAVE_SECONDS = 60
 local MAX_BYTES = 3_500_000
 local ROOTS = { settings = true, users = true, data = true }
 
-Players.CharacterAutoLoads = true
+-- персонажей спавнит ChillZone.server, когда участок игрока готов (иначе он падает в пустоту)
+Players.CharacterAutoLoads = false
 
 local remotes = Instance.new("Folder")
 remotes.Name = "PS5Remotes"
