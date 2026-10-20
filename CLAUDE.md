@@ -87,6 +87,12 @@ HillPine (3 тыс. треуг.), OliveTree (не используется: «з
   `UI/*` (экраны), `Runtime` (запуск игр, `ctx`), `Input`, `Data`, `Trophies`, `Progress`, `Registry`.
 - `src/apps/<Игра>/` — `manifest.luau` + `init.luau` (`launch(ctx)`), шаблон в `_Template`.
 
+## Git
+
+В этой папке могут параллельно работать другие сессии (например, сессия «Нейро модели» делает пак ассетов
+в `assets/pack/`, `blender/pack_export.py`, `tools/ref_*.py`). Коммить только свои файлы явными путями,
+никогда `git add -A`; `.claude/settings.local.json` не коммитить.
+
 ## Стиль
 
 Комментарии и тексты коммитов — по-русски. Отступы табами. Модули возвращают таблицу.
