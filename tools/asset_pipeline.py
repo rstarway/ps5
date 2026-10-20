@@ -61,12 +61,13 @@ def probe(name, since):
     print("Blender axes: -Y = Roblox +Z (front). yaw 0 keeps -Y as front; 90 turns -X to front; 180 turns +Y; 270 turns +X.")
 
 
-def build(name, yaw, tris):
+def build(name, yaw, tris, split=False):
     src = os.path.join(ROOT, "assets", "hunyuan", name.lower() + ".glb")
     dst = os.path.join(ROOT, "assets", "hunyuan", "ready", name + ".glb")
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     out = subprocess.run([BLENDER, "-b", "-P", os.path.join(ROOT, "blender", "prep_asset.py"), "--", src, dst,
-                          "--tris", str(tris), "--yaw", str(yaw)], capture_output=True, text=True).stdout
+                          "--tris", str(tris), "--yaw", str(yaw)] + (["--split"] if split else []),
+                         capture_output=True, text=True).stdout
     print("\n".join(l for l in out.splitlines() if l.startswith("DONE")))
     sys.path.insert(0, os.path.dirname(__file__))
     import roblox_upload
@@ -79,9 +80,10 @@ if __name__ == "__main__":
     p.add_argument("name")
     p.add_argument("--yaw", type=float, default=0)
     p.add_argument("--tris", type=int, default=18000)
+    p.add_argument("--split", action="store_true", help="резать на куски вместо упрощения (листва, стёкла)")
     p.add_argument("--since", type=float, default=time.time() - 600, help="ignore downloads older than this")
     a = p.parse_args()
     if a.cmd == "probe":
         probe(a.name, a.since)
     else:
-        build(a.name, a.yaw, a.tris)
+        build(a.name, a.yaw, a.tris, a.split)

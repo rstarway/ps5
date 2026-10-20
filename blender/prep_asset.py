@@ -24,11 +24,43 @@ def args():
     p.add_argument("--tris", type=int, default=18000)
     p.add_argument("--yaw", type=float, default=0.0)
     p.add_argument("--info", action="store_true")
+    p.add_argument("--split", action="store_true",
+                   help="не упрощать, а разрезать на куски по --tris треугольников (листва, стёкла — упрощение ломает UV)")
     return p.parse_args(argv)
 
 
 def tri_count(obj):
     return sum(len(p.vertices) - 2 for p in obj.data.polygons)
+
+
+def split_object(obj, limit):
+    """Режет сетку на куски по limit треугольников вдоль самой длинной оси (каждый кусок станет MeshPart)."""
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.quads_convert_to_tris()
+    bpy.ops.object.mode_set(mode="OBJECT")
+    dims = obj.dimensions
+    axis = max(range(3), key=lambda i: dims[i])
+    n = math.ceil(len(obj.data.polygons) / limit)
+    chunk = math.ceil(len(obj.data.polygons) / n)
+    for k in range(n - 1, 0, -1):
+        # после каждого отделения индексы граней меняются, поэтому каждый раз сортируем заново
+        # и отделяем дальний по оси кусок; первый кусок остаётся в obj
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="DESELECT")
+        bpy.ops.object.mode_set(mode="OBJECT")
+        polys = obj.data.polygons
+        order = sorted(range(len(polys)), key=lambda i: polys[i].center[axis])
+        far = set(order[k * chunk:])
+        for i, poly in enumerate(polys):
+            poly.select = i in far
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.separate(type="SELECTED")
+        bpy.ops.object.mode_set(mode="OBJECT")
+    return n
 
 
 def main():
@@ -57,7 +89,7 @@ def main():
         print(f"INFO tris={before} materials={mats} size(blender x,y,z)={tuple(round(x, 3) for x in hi - lo)}")
         if not a.dst:
             return
-    if before > a.tris:
+    if before > a.tris and not a.split:
         mod = obj.modifiers.new("Decimate", "DECIMATE")
         mod.decimate_type = "COLLAPSE"
         mod.ratio = a.tris / before
@@ -78,6 +110,9 @@ def main():
     bm.free()
     after = tri_count(obj)
     size = hi - lo
+    parts = 1
+    if a.split and after > a.tris:
+        parts = split_object(obj, a.tris)
     # Roblox всё равно хранит текстуры не больше 1024×1024: уменьшаем заранее, чтобы файл был лёгким
     for img in bpy.data.images:
         w, h = img.size
@@ -85,7 +120,7 @@ def main():
             k = 1024 / max(w, h)
             img.scale(int(w * k), int(h * k))
     bpy.ops.export_scene.gltf(filepath=a.dst, export_format="GLB", use_selection=False, export_apply=True)
-    print(f"DONE tris {before} -> {after}, size(blender x,y,z)={tuple(round(x, 3) for x in size)}, materials={mats}")
+    print(f"DONE tris {before} -> {after} in {parts} mesh(es), size(blender x,y,z)={tuple(round(x, 3) for x in size)}, materials={mats}")
 
 
 main()
