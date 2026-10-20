@@ -76,8 +76,17 @@ function World.Build()
 	light.Parent = spot
 	-- студийный свет как на продуктовой съёмке: мягкий фронтальный и два контровых,
 	-- иначе белые боковины консоли без неона уходят в чёрное
+	-- фронтальный — прожектор, направленный на консоль (точечный пересвечивал геймпад перед ней)
+	local key = part({ Name = "StudioKey", Size = Vector3.one, Transparency = 1,
+		CFrame = CFrame.lookAt(Vector3.new(0, 12, 30), Vector3.new(0, 6, 0)) })
+	local keyLight = Instance.new("SpotLight")
+	keyLight.Face = Enum.NormalId.Front
+	keyLight.Angle = 28
+	keyLight.Range = 50
+	keyLight.Brightness = 4
+	keyLight.Color = Color3.fromRGB(255, 246, 236)
+	keyLight.Parent = key
 	for _, info in {
-		{ Vector3.new(0, 9, 24), 2.2, Color3.fromRGB(255, 246, 236) },
 		{ Vector3.new(-18, 14, -6), 1.6, Color3.fromRGB(205, 220, 255) },
 		{ Vector3.new(18, 14, -6), 1.6, Color3.fromRGB(205, 220, 255) },
 	} do
