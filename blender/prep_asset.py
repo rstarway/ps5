@@ -63,8 +63,9 @@ def main():
         mod.ratio = a.tris / before
         mod.use_collapse_triangulate = True
         bpy.ops.object.modifier_apply(modifier=mod.name)
-    # yaw вокруг вертикали (Blender Z = Roblox Y); Roblox +Z = Blender -Y
-    obj.data.transform(Matrix.Rotation(math.radians(a.yaw), 4, "Z"))
+    # yaw вокруг вертикали (Blender Z = Roblox Y). В сцене «перед» = Blender -Y, но импорт glTF в Roblox
+    # разворачивает модель: Blender -Y становится Roblox -Z. Добавочные 180° дают «перед» на Roblox +Z.
+    obj.data.transform(Matrix.Rotation(math.radians(a.yaw + 180), 4, "Z"))
     lo = Vector([min(v.co[i] for v in obj.data.vertices) for i in range(3)])
     hi = Vector([max(v.co[i] for v in obj.data.vertices) for i in range(3)])
     shift = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
