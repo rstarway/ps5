@@ -1,4 +1,4 @@
--- Neon Drive — 3D-гонка по ночному неоновому городу. Две гонки: Clock Run (3 круга, чекпоинты
+-- Neon Drive — 3D-гонка по ночному городу. Две гонки: Clock Run (3 круга, чекпоинты
 -- добавляют время) и Time Trial (свободные круги против призрака лучшего круга).
 -- Машина едет по своей аркадной физике (без физики Roblox): газ, тормоз, занос, ускорение.
 local Track = require(script.Track)
@@ -55,15 +55,14 @@ local CAR_PARTS = {
 	{ name = "Spoiler", size = Vector3.new(7.2, 0.3, 1.6), at = Vector3.new(0, 3.7, -6), color = Color3.fromRGB(20, 14, 36), material = Enum.Material.SmoothPlastic },
 	{ name = "SpoilerL", size = Vector3.new(0.3, 1.2, 0.6), at = Vector3.new(-2.6, 3, -6), color = Color3.fromRGB(20, 14, 36) },
 	{ name = "SpoilerR", size = Vector3.new(0.3, 1.2, 0.6), at = Vector3.new(2.6, 3, -6), color = Color3.fromRGB(20, 14, 36) },
-	{ name = "StripeL", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(-3.56, 1.7, 0), color = CYAN, material = Enum.Material.Neon },
-	{ name = "StripeR", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(3.56, 1.7, 0), color = CYAN, material = Enum.Material.Neon },
-	{ name = "Glow", size = Vector3.new(6.4, 0.2, 12), at = Vector3.new(0, 0.6, 0), color = CYAN, material = Enum.Material.Neon, transparency = 0.2 },
-	{ name = "HeadL", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(-2.3, 1.6, 8.75), color = WHITE, material = Enum.Material.Neon },
-	{ name = "HeadR", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(2.3, 1.6, 8.75), color = WHITE, material = Enum.Material.Neon },
-	{ name = "TailL", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(-2.2, 2.1, -6.55), color = Color3.fromRGB(150, 0, 30), material = Enum.Material.Neon },
-	{ name = "TailR", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(2.2, 2.1, -6.55), color = Color3.fromRGB(150, 0, 30), material = Enum.Material.Neon },
-	{ name = "FlameL", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(-1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.Neon, transparency = 1 },
-	{ name = "FlameR", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.Neon, transparency = 1 },
+	{ name = "StripeL", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(-3.56, 1.7, 0), color = WHITE, material = Enum.Material.SmoothPlastic },
+	{ name = "StripeR", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(3.56, 1.7, 0), color = WHITE, material = Enum.Material.SmoothPlastic },
+	{ name = "HeadL", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(-2.3, 1.6, 8.75), color = Color3.fromRGB(255, 248, 225), material = Enum.Material.Glass },
+	{ name = "HeadR", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(2.3, 1.6, 8.75), color = Color3.fromRGB(255, 248, 225), material = Enum.Material.Glass },
+	{ name = "TailL", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(-2.2, 2.1, -6.55), color = Color3.fromRGB(170, 20, 30), material = Enum.Material.Glass },
+	{ name = "TailR", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(2.2, 2.1, -6.55), color = Color3.fromRGB(170, 20, 30), material = Enum.Material.Glass },
+	{ name = "FlameL", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(-1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.SmoothPlastic, transparency = 1 },
+	{ name = "FlameR", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.SmoothPlastic, transparency = 1 },
 	{ name = "WheelFL", size = Vector3.new(1.4, 2.6, 2.6), at = Vector3.new(-3.6, 1.3, 4.2), color = Color3.fromRGB(12, 12, 16), shape = Enum.PartType.Cylinder },
 	{ name = "WheelFR", size = Vector3.new(1.4, 2.6, 2.6), at = Vector3.new(3.6, 1.3, 4.2), color = Color3.fromRGB(12, 12, 16), shape = Enum.PartType.Cylinder },
 	{ name = "WheelRL", size = Vector3.new(1.4, 2.6, 2.6), at = Vector3.new(-3.6, 1.3, -4.2), color = Color3.fromRGB(12, 12, 16), shape = Enum.PartType.Cylinder },
@@ -71,9 +70,8 @@ local CAR_PARTS = {
 }
 
 local GHOST_PARTS = {
-	{ name = "Body", size = Vector3.new(7, 1.6, 13), at = Vector3.new(0, 1.7, 0), color = CYAN, material = Enum.Material.Neon, transparency = 0.75 },
-	{ name = "Cabin", size = Vector3.new(5.6, 1.5, 5.5), at = Vector3.new(0, 3.2, -0.8), color = CYAN, material = Enum.Material.Neon, transparency = 0.8 },
-	{ name = "Glow", size = Vector3.new(6.4, 0.2, 12), at = Vector3.new(0, 0.6, 0), color = CYAN, material = Enum.Material.Neon, transparency = 0.6 },
+	{ name = "Body", size = Vector3.new(7, 1.6, 13), at = Vector3.new(0, 1.7, 0), color = CYAN, material = Enum.Material.Glass, transparency = 0.7 },
+	{ name = "Cabin", size = Vector3.new(5.6, 1.5, 5.5), at = Vector3.new(0, 3.2, -0.8), color = CYAN, material = Enum.Material.Glass, transparency = 0.75 },
 }
 
 local function buildCar(parent, spec, name)
@@ -137,11 +135,6 @@ function Game.launch(ctx)
 	local built = track:build(ctx.world, checkpoints, PAD_SPOTS)
 	local carParts = buildCar(ctx.world, CAR_PARTS, "Car")
 	local ghostParts = buildCar(ctx.world, GHOST_PARTS, "Ghost")
-	local glowLight = Instance.new("PointLight")
-	glowLight.Color = CYAN
-	glowLight.Range = 16
-	glowLight.Brightness = 3
-	glowLight.Parent = carParts.Glow
 	local headLight = Instance.new("SpotLight")
 	headLight.Range = 60
 	headLight.Angle = 50

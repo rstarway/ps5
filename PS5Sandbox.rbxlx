@@ -1007,7 +1007,7 @@ local function trophyModel(spot, trophy, manifest)
 	local up = CFrame.Angles(0, 0, math.rad(90))
 	piece(Enum.PartType.Block, Vector3.new(1.2, 0.35, 1.2), CFrame.new(0, 0.2, 0), Color3.fromRGB(30, 30, 34), Enum.Material.Marble)
 	piece(Enum.PartType.Cylinder, Vector3.new(0.9, 0.3, 0.3), CFrame.new(0, 0.8, 0) * up, color, Enum.Material.Metal)
-	piece(Enum.PartType.Cylinder, Vector3.new(1, 1, 1), CFrame.new(0, 1.65, 0) * up, color, trophy.grade == "platinum" and Enum.Material.Neon or Enum.Material.Metal)
+	piece(Enum.PartType.Cylinder, Vector3.new(1, 1, 1), CFrame.new(0, 1.65, 0) * up, color, Enum.Material.Metal)
 	if unlocked and (trophy.grade == "gold" or trophy.grade == "platinum") then
 		local l = Instance.new("PointLight")
 		l.Color = color
@@ -1704,7 +1704,7 @@ end
 local KIND = {
 	White = { color = Color3.fromRGB(238, 240, 245), material = Enum.Material.SmoothPlastic },
 	Black = { color = Color3.fromRGB(16, 16, 20), material = Enum.Material.SmoothPlastic },
-	Light = { color = Color3.fromRGB(0, 120, 255), material = Enum.Material.Neon },
+	Light = { color = Color3.fromRGB(70, 130, 220), material = Enum.Material.SmoothPlastic },
 }
 
 local function meshPartFrom(mesh)
@@ -1757,9 +1757,10 @@ local function buildModel(module, yieldEvery)
 			meshPart.CanTouch = false
 			if part.color then
 				meshPart.Color = Color3.fromRGB(part.color[1], part.color[2], part.color[3])
-				meshPart.Material = Enum.Material[part.material]
+				-- неон в проекте не используем: старые выгрузки из Blender становятся пластиком
+				meshPart.Material = part.material == "Neon" and Enum.Material.SmoothPlastic or Enum.Material[part.material]
 				meshPart.Transparency = part.transparency or 0
-				meshPart.CastShadow = part.material ~= "Neon" and part.material ~= "Glass"
+				meshPart.CastShadow = part.material ~= "Glass"
 			else
 				local style = KIND[part.kind] or KIND.Black
 				meshPart.Color = style.color
@@ -2419,6 +2420,60 @@ return Nav
       </Item>
       <Item class="ModuleScript" referent="19">
         <Properties>
+          <string name="Name">NoGlow</string>
+          <string name="Source"><![CDATA[-- Без неона и свечения: неоновый материал вместе с Bloom пересвечивал мир и игры.
+-- Страховка на клиенте: любая деталь с Neon становится обычным пластиком, а Bloom/SunRays
+-- из Lighting удаляются. Так неон не вернётся, даже если новая игра его создаст.
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+
+local NoGlow = {}
+
+local BANNED_EFFECTS = { BloomEffect = true, SunRaysEffect = true }
+
+local function fixPart(p)
+	if p.Material == Enum.Material.Neon then
+		p.Material = Enum.Material.SmoothPlastic
+	end
+end
+
+local function watchPart(p)
+	fixPart(p)
+	-- материал иногда задают сразу после того, как деталь попала в мир
+	task.defer(fixPart, p)
+end
+
+local function fixEffect(e)
+	if BANNED_EFFECTS[e.ClassName] then
+		e:Destroy()
+	end
+end
+
+function NoGlow.Start()
+	for _, d in Workspace:GetDescendants() do
+		if d:IsA("BasePart") then
+			watchPart(d)
+		end
+	end
+	Workspace.DescendantAdded:Connect(function(d)
+		if d:IsA("BasePart") then
+			watchPart(d)
+		end
+	end)
+	for _, e in Lighting:GetChildren() do
+		fixEffect(e)
+	end
+	Lighting.ChildAdded:Connect(function(e)
+		task.defer(fixEffect, e)
+	end)
+end
+
+return NoGlow
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="20">
+        <Properties>
           <string name="Name">Profiles</string>
           <string name="Source"><![CDATA[-- Профили игроков в чиллзоне: навёл мышь на игрока — подсветка и карточка с уровнем, клик (или тап) — профиль
 -- с трофеями и наградами по играм и кнопкой «Visit Chill Zone». В гостях сверху плашка с кнопкой домой.
@@ -2830,7 +2885,7 @@ return Profiles
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="21">
         <Properties>
           <string name="Name">Progress</string>
           <string name="Source"><![CDATA[-- Прогресс игрока: очки за трофеи, скачанные и сыгранные игры, и уровень чиллзоны.
@@ -2953,7 +3008,7 @@ return Progress
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="21">
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">Registry</string>
           <string name="Source"><![CDATA[-- Реестр приложений: каждая папка (ModuleScript) в ReplicatedStorage.PS5Apps
@@ -3079,7 +3134,7 @@ return Registry
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="22">
+      <Item class="ModuleScript" referent="23">
         <Properties>
           <string name="Name">Runtime</string>
           <string name="Source"><![CDATA[-- Жизненный цикл приложений и объект ctx, который получает игра.
@@ -3365,7 +3420,7 @@ return Runtime
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="23">
+      <Item class="ModuleScript" referent="24">
         <Properties>
           <string name="Name">Signal</string>
           <string name="Source"><![CDATA[-- Минимальная реализация сигнала (как RBXScriptSignal, но на Luau).
@@ -3419,7 +3474,7 @@ return Signal
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="24">
+      <Item class="ModuleScript" referent="25">
         <Properties>
           <string name="Name">Theme</string>
           <string name="Source"><![CDATA[-- Визуальная тема системы. Сюда вставляются ID ассетов после загрузки рендеров из Blender.
@@ -3514,7 +3569,7 @@ return Theme
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="25">
+      <Item class="ModuleScript" referent="26">
         <Properties>
           <string name="Name">Trophies</string>
           <string name="Source"><![CDATA[-- Трофеи: описываются в manifest.trophies, разблокируются через ctx.trophies:Unlock(id).
@@ -3601,7 +3656,7 @@ return Trophies
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="26">
+      <Item class="ModuleScript" referent="27">
         <Properties>
           <string name="Name">UI</string>
           <string name="Source"><![CDATA[-- Оболочка системы: слои GUI, фон, переходы между экранами, кнопка PS, питание.
@@ -4129,7 +4184,7 @@ end
 return Shell
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">AppMenu</string>
             <string name="Source"><![CDATA[-- Меню параметров приложения (кнопка OPTIONS или «•••»).
@@ -4200,7 +4255,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Boot</string>
             <string name="Source"><![CDATA[-- Экран включения: пролёт камеры вокруг консоли, символы PlayStation и «Нажмите ✕».
@@ -4363,7 +4418,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Components</string>
             <string name="Source"><![CDATA[-- Общие элементы интерфейса системы.
@@ -4614,7 +4669,7 @@ return C
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">ControlCenter</string>
             <string name="Source"><![CDATA[-- Центр управления (кнопка PS): карточки «Домой» / текущая игра и ряд быстрых функций.
@@ -4915,7 +4970,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Home</string>
             <string name="Source"><![CDATA[-- Главный экран в духе PS5: вкладки Games/Media, ряд маленьких плиток, выбранная плитка крупнее и с названием справа,
@@ -5359,7 +5414,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Library</string>
             <string name="Source"><![CDATA[-- Библиотека игр: сетка всех установленных приложений.
@@ -5439,7 +5494,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Modal</string>
             <string name="Source"><![CDATA[-- Модальные окна: меню действий, подтверждение, ввод текста.
@@ -5616,7 +5671,7 @@ return Modal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Settings</string>
             <string name="Source"><![CDATA[-- Настройки: категории слева, параметры справа.
@@ -5917,7 +5972,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Splash</string>
             <string name="Source"><![CDATA[-- Заставка запуска приложения: цвета игры, значок и название.
@@ -6002,7 +6057,7 @@ return Splash
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Store</string>
             <string name="Source"><![CDATA[-- PlayStation Store: бесплатные игры песочницы. Игру скачивают кнопкой Download (полоса загрузки),
@@ -6328,7 +6383,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Toasts</string>
             <string name="Source"><![CDATA[-- Всплывающие уведомления в правом верхнем углу (трофеи, сообщения игр, система).
@@ -6415,7 +6470,7 @@ return Toasts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Trophies</string>
             <string name="Source"><![CDATA[-- Экран трофеев: уровень пользователя, список игр слева, трофеи выбранной игры справа.
@@ -6578,7 +6633,7 @@ end
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Users</string>
             <string name="Source"><![CDATA[-- Выбор пользователя: «Кто будет играть?»
@@ -6722,7 +6777,7 @@ end
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="40">
+      <Item class="ModuleScript" referent="41">
         <Properties>
           <string name="Name">Util</string>
           <string name="Source"><![CDATA[-- Помощники для построения интерфейса. Доступны играм как ctx.ui.
@@ -6913,22 +6968,21 @@ return Util
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="41">
+      <Item class="ModuleScript" referent="42">
         <Properties>
           <string name="Name">Version</string>
           <string name="Source"><![CDATA[return "1.0.0"
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="42">
+      <Item class="ModuleScript" referent="43">
         <Properties>
           <string name="Name">World</string>
-          <string name="Source"><![CDATA[-- 3D-сцена для заставки: консоль на подиуме в тёмной комнате с неоном.
+          <string name="Source"><![CDATA[-- 3D-сцена для заставки: консоль на подиуме в тёмной студии под одним прожектором.
 -- Если в ReplicatedStorage.PS5Assets лежит модель "Console" (импорт FBX из Blender),
 -- используется она, иначе консоль собирается из деталей.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 
 local Embedded = require(script.Parent.Embedded)
@@ -6972,7 +7026,6 @@ local function buildConsole()
 			Name = "LightStrip",
 			Size = Vector3.new(0.08, 9.6, 7.2),
 			Color = blue,
-			Material = Enum.Material.Neon,
 			CFrame = CFrame.new(side * 1.18, 5.9, 0) * CFrame.Angles(0, 0, math.rad(-side * 3)),
 		})
 	end
@@ -6994,15 +7047,6 @@ function World.Build()
 
 	part({ Name = "Floor", Size = Vector3.new(200, 1, 200), Position = Vector3.new(0, 0, 0), Color = Color3.fromRGB(8, 10, 18), Reflectance = 0.35, Material = Enum.Material.Glass })
 	part({ Name = "Wall", Size = Vector3.new(200, 80, 1), Position = Vector3.new(0, 40, -30), Color = Color3.fromRGB(6, 8, 16) })
-	for i = -3, 3 do
-		part({
-			Name = "Neon",
-			Size = Vector3.new(0.3, 60, 0.3),
-			Position = Vector3.new(i * 14, 30, -29),
-			Color = i % 2 == 0 and Color3.fromRGB(0, 90, 255) or Color3.fromRGB(120, 40, 255),
-			Material = Enum.Material.Neon,
-		})
-	end
 	local spot = part({ Name = "Spot", Size = Vector3.one, Transparency = 1, Position = Vector3.new(0, 30, 10) })
 	local light = Instance.new("SpotLight")
 	light.Angle = 40
@@ -7018,8 +7062,8 @@ function World.Build()
 				p.Anchored = true
 				p.CanCollide = false
 				if string.find(p.Name, "Light") then
-					p.Color = Color3.fromRGB(0, 120, 255)
-					p.Material = Enum.Material.Neon
+					p.Color = Color3.fromRGB(70, 130, 220)
+					p.Material = Enum.Material.SmoothPlastic
 				elseif string.find(p.Name, "White") then
 					p.Color = Color3.fromRGB(238, 240, 245)
 					p.Material = Enum.Material.SmoothPlastic
@@ -7067,21 +7111,6 @@ function World.Build()
 	scene.WorldPivot = CFrame.new()
 	scene:PivotTo(CFrame.new(ORIGIN))
 	consoleCenter += ORIGIN
-
-	if not Lighting:FindFirstChild("PS5Bloom") then
-		local bloom = Instance.new("BloomEffect")
-		bloom.Name = "PS5Bloom"
-		bloom.Intensity = 0.8
-		bloom.Size = 30
-		bloom.Threshold = 0.9
-		bloom.Parent = Lighting
-		local cc = Instance.new("ColorCorrectionEffect")
-		cc.Name = "PS5Color"
-		cc.Contrast = 0.1
-		cc.Saturation = 0.1
-		cc.TintColor = Color3.fromRGB(220, 230, 255)
-		cc.Parent = Lighting
-	end
 	return scene
 end
 
@@ -7112,7 +7141,7 @@ return World
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="43">
+      <Item class="ModuleScript" referent="44">
         <Properties>
           <string name="Name">WorldFX</string>
           <string name="Source"><![CDATA[-- Живой мир чиллзоны на клиенте (сам дом из Blender строит сервер): светлячки, искры и дым костра, дым из трубы, переливы неона,
@@ -7220,7 +7249,7 @@ local function fireflies(zone, folder)
 		fly.Name = "Firefly"
 		fly.Shape = Enum.PartType.Ball
 		fly.Size = Vector3.one * 0.28
-		fly.Material = Enum.Material.Neon
+		fly.Material = Enum.Material.SmoothPlastic
 		fly.Color = Color3.fromRGB(210, 255, 120)
 		fly.Anchored = true
 		fly.CanCollide = false
@@ -7493,11 +7522,11 @@ return WorldFX
         </Properties>
       </Item>
     </Item>
-    <Item class="Folder" referent="44">
+    <Item class="Folder" referent="45">
       <Properties>
         <string name="Name">PS5Apps</string>
       </Properties>
-      <Item class="ModuleScript" referent="45">
+      <Item class="ModuleScript" referent="46">
         <Properties>
           <string name="Name">BeatRush</string>
           <string name="Source"><![CDATA[-- Beat Rush — ритм-игра на GUI: 4 дорожки, ноты падают к линии удара.
@@ -8328,7 +8357,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/beat_rush_art.png. Не редактировать вручную.
@@ -8337,7 +8366,7 @@ return { width = 320, height = 180, rgb = "BwEZBwAZBwEZBwEZBwEZBwEZBwEZBwEZBwEZB
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/beat_rush_cover.png. Не редактировать вручную.
@@ -8346,7 +8375,7 @@ return { width = 192, height = 192, rgb = "BwEZBwEZBwEZBwEZBwEZCAEaBwEZBwEZBwEZC
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -8387,7 +8416,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="49">
+      <Item class="ModuleScript" referent="50">
         <Properties>
           <string name="Name">BlockCraft</string>
           <string name="Source"><![CDATA[-- BlockCraft — песочница по образцу Minecraft Java 1.16.5 (Nether Update), со своей графикой и системными звуками.
@@ -9270,7 +9299,7 @@ function BlockCraft.launch(ctx)
 		local flash = Instance.new("Part")
 		flash.Anchored, flash.CanCollide, flash.CanQuery = true, false, false
 		flash.Shape = Enum.PartType.Ball
-		flash.Material = Enum.Material.Neon
+		flash.Material = Enum.Material.SmoothPlastic
 		flash.Color = rgb(255, 240, 200)
 		flash.Size = Vector3.one * B * 2
 		flash.Position = world:toWorld(center)
@@ -10201,7 +10230,7 @@ end
 return BlockCraft
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Content</string>
             <string name="Source"><![CDATA[-- Содержимое BlockCraft по образцу Minecraft Java 1.16.5 (Nether Update): блоки, предметы, инструменты,
@@ -10245,11 +10274,11 @@ Content.BLOCKS = {
 	glass = { label = "Glass", color = rgb(200, 232, 255), material = M.Glass, hardness = 0.3, see = true, transparency = 0.6, drop = false },
 	stone_bricks = { label = "Stone Bricks", color = rgb(118, 118, 118), material = M.Brick, hardness = 1.5, tool = "pickaxe", tier = 1 },
 	bricks = { label = "Bricks", color = rgb(150, 74, 60), material = M.Brick, hardness = 2, tool = "pickaxe", tier = 1 },
-	torch = { label = "Torch", color = rgb(255, 196, 90), material = M.Neon, hardness = 0, solid = false, see = true, shape = "torch", light = 1 },
+	torch = { label = "Torch", color = rgb(255, 196, 90), material = M.SmoothPlastic, hardness = 0, solid = false, see = true, shape = "torch", light = 1 },
 	water = { label = "Water", color = rgb(48, 96, 214), material = M.Glass, hardness = -1, solid = false, see = true, liquid = true, transparency = 0.45, drop = false },
-	lava = { label = "Lava", color = rgb(255, 110, 20), material = M.Neon, hardness = -1, solid = false, see = true, liquid = true, light = 0.8, damage = 4, drop = false },
-	nether_portal_x = { label = "Nether Portal", color = rgb(140, 60, 230), material = M.Neon, hardness = -1, solid = false, see = true, transparency = 0.35, portal = "x", light = 0.6, drop = false },
-	nether_portal_z = { label = "Nether Portal", color = rgb(140, 60, 230), material = M.Neon, hardness = -1, solid = false, see = true, transparency = 0.35, portal = "z", light = 0.6, drop = false },
+	lava = { label = "Lava", color = rgb(255, 110, 20), material = M.SmoothPlastic, hardness = -1, solid = false, see = true, liquid = true, light = 0.8, damage = 4, drop = false },
+	nether_portal_x = { label = "Nether Portal", color = rgb(140, 60, 230), material = M.SmoothPlastic, hardness = -1, solid = false, see = true, transparency = 0.35, portal = "x", light = 0.6, drop = false },
+	nether_portal_z = { label = "Nether Portal", color = rgb(140, 60, 230), material = M.SmoothPlastic, hardness = -1, solid = false, see = true, transparency = 0.35, portal = "z", light = 0.6, drop = false },
 	-- Незер (обновление 1.16)
 	netherrack = { label = "Netherrack", color = rgb(112, 40, 40), material = M.Cobblestone, hardness = 0.4, tool = "pickaxe", tier = 1 },
 	nether_gold_ore = { label = "Nether Gold Ore", color = rgb(168, 92, 52), material = M.Cobblestone, hardness = 3, tool = "pickaxe", tier = 1, drop = "gold_nugget", dropCount = { 2, 6 } },
@@ -10259,8 +10288,8 @@ Content.BLOCKS = {
 	soul_soil = { label = "Soul Soil", color = rgb(76, 58, 46), material = M.Ground, hardness = 0.5, tool = "shovel" },
 	basalt = { label = "Basalt", color = rgb(74, 74, 80), material = M.Basalt, hardness = 1.25, tool = "pickaxe", tier = 1 },
 	blackstone = { label = "Blackstone", color = rgb(40, 36, 44), material = M.Slate, hardness = 1.5, tool = "pickaxe", tier = 1 },
-	glowstone = { label = "Glowstone", color = rgb(255, 216, 128), material = M.Neon, hardness = 0.3, light = 1 },
-	shroomlight = { label = "Shroomlight", color = rgb(255, 168, 76), material = M.Neon, hardness = 1, tool = "axe", light = 1 },
+	glowstone = { label = "Glowstone", color = rgb(255, 216, 128), material = M.SmoothPlastic, hardness = 0.3, light = 1 },
+	shroomlight = { label = "Shroomlight", color = rgb(255, 168, 76), material = M.SmoothPlastic, hardness = 1, tool = "axe", light = 1 },
 	magma_block = { label = "Magma Block", color = rgb(150, 54, 22), material = M.CrackedLava, hardness = 0.5, tool = "pickaxe", tier = 1, hurts = 1, light = 0.3 },
 	crimson_nylium = { label = "Crimson Nylium", color = rgb(150, 28, 40), material = M.Grass, hardness = 0.4, tool = "pickaxe", tier = 1, drop = "netherrack" },
 	warped_nylium = { label = "Warped Nylium", color = rgb(36, 128, 116), material = M.Grass, hardness = 0.4, tool = "pickaxe", tier = 1, drop = "netherrack" },
@@ -10411,7 +10440,7 @@ return Content
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Mobs</string>
             <string name="Source"><![CDATA[-- Мобы: свинья, зомби, крипер (Верхний мир), пиглин, зомби-пиглин и хоглин (Незер 1.16).
@@ -10688,7 +10717,7 @@ return Mobs
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Screens</string>
             <string name="Source"><![CDATA[-- Экраны BlockCraft в духе интерфейса Minecraft Java 1.16: главное меню, выбор и создание мира, настройки,
@@ -12744,7 +12773,7 @@ return Screens
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Terrain</string>
             <string name="Source"><![CDATA[-- Генерация миров BlockCraft по зерну: Верхний мир (равнины, леса, пустыня, снега, пещеры, руды, озёра,
@@ -13102,7 +13131,7 @@ return Terrain
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Textures</string>
             <string name="Source"><![CDATA[-- Пиксельные текстуры 16×16 в духе Minecraft, нарисованные кодом (свои, не файлы Mojang).
@@ -13888,7 +13917,7 @@ return Textures
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">World</string>
             <string name="Source"><![CDATA[-- Отрисовка мира кусками 8×8 вокруг игрока: строятся только блоки с открытой гранью, дальние куски убираются.
@@ -14367,7 +14396,7 @@ return World
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="56">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -14414,7 +14443,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="57">
+      <Item class="ModuleScript" referent="58">
         <Properties>
           <string name="Name">BrickBreak</string>
           <string name="Source"><![CDATA[-- Арканоид: стена 10×6 кирпичей, 3 жизни; каждая следующая стена — мяч быстрее.
@@ -14554,7 +14583,7 @@ end
 return BrickBreak
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -14587,7 +14616,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="59">
+      <Item class="ModuleScript" referent="60">
         <Properties>
           <string name="Name">Chess</string>
           <string name="Source"><![CDATA[-- Шахматы: партия с компьютером (3 уровня) или вдвоём за одной консолью. Правила и компьютер в Engine.luau,
@@ -15471,7 +15500,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="61">
           <Properties>
             <string name="Name">Engine</string>
             <string name="Source"><![CDATA[-- Шахматный движок: доска 0x88, все правила (рокировка, взятие на проходе, превращение, шах, мат, пат,
@@ -16248,7 +16277,7 @@ return Engine
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="61">
+        <Item class="ModuleScript" referent="62">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/chess_art.png. Не редактировать вручную.
@@ -16257,7 +16286,7 @@ return { width = 320, height = 180, rgb = "AAIFAAEFAAIFAAIFAAIFAAEFAAEFAAIFAAEFA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="62">
+        <Item class="ModuleScript" referent="63">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/chess_cover.png. Не редактировать вручную.
@@ -16266,7 +16295,7 @@ return { width = 192, height = 192, rgb = "AAIFAAEFAAIFAAEFAAEFAAIFAAIFAAIFAQIFA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="63">
+        <Item class="ModuleScript" referent="64">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -16306,7 +16335,7 @@ return {
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="64">
+        <Item class="ModuleScript" referent="65">
           <Properties>
             <string name="Name">pieces</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/chess_art.py. Не редактировать вручную.
@@ -16329,7 +16358,7 @@ return { size = 80, sprites = {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="65">
+      <Item class="ModuleScript" referent="66">
         <Properties>
           <string name="Name">CubeLogic</string>
           <string name="Source"><![CDATA[-- Cube Logic — 3D-головоломка: кати куб по клеткам, светящаяся грань должна смотреть вверх на выходе.
@@ -16440,7 +16469,7 @@ function Game.launch(ctx)
 			Size = Vector3.one * (0.4 + r * 0.8),
 			Position = ORIGIN + Vector3.new(math.random(-160, 160), -math.random(15, 70), math.random(-160, 160)),
 			Color = i % 3 == 0 and hex("#7B6CF6") or ACCENT,
-			Material = Enum.Material.Neon,
+			Material = Enum.Material.SmoothPlastic,
 			Transparency = 0.3,
 		})
 	end
@@ -16450,7 +16479,7 @@ function Game.launch(ctx)
 	board.Parent = ctx.world
 
 	local cube = part({ Name = "Cube", Size = Vector3.new(TILE, TILE, TILE), Color = hex("#E9F2FF"), Material = Enum.Material.SmoothPlastic })
-	local markPart = part({ Name = "Mark", Size = Vector3.new(TILE * 0.72, 0.12, TILE * 0.72), Color = ACCENT, Material = Enum.Material.Neon })
+	local markPart = part({ Name = "Mark", Size = Vector3.new(TILE * 0.72, 0.12, TILE * 0.72), Color = ACCENT, Material = Enum.Material.SmoothPlastic })
 	local light = Instance.new("PointLight")
 	light.Color = ACCENT
 	light.Range = 14
@@ -16677,17 +16706,17 @@ function Game.launch(ctx)
 						local len = o[1] == 0 and TILE - 0.2 or 0.35
 						local dep = o[1] == 0 and 0.35 or TILE - 0.2
 						part({
-							Name = "ExitGlow", Size = Vector3.new(len, 0.2, dep), Material = Enum.Material.Neon, Color = ACCENT,
+							Name = "ExitGlow", Size = Vector3.new(len, 0.2, dep), Material = Enum.Material.SmoothPlastic, Color = ACCENT,
 							Position = base + Vector3.new(o[1] * (TILE / 2 - 0.27), 0.05, o[2] * (TILE / 2 - 0.27)), Parent = board,
 						})
 					end
-					local beam = part({ Name = "ExitBeam", Size = Vector3.new(TILE * 0.5, 0.1, TILE * 0.5), Material = Enum.Material.Neon, Color = ACCENT, Transparency = 0.4, Position = base + Vector3.new(0, 0.02, 0), Parent = board })
+					local beam = part({ Name = "ExitBeam", Size = Vector3.new(TILE * 0.5, 0.1, TILE * 0.5), Material = Enum.Material.SmoothPlastic, Color = ACCENT, Transparency = 0.4, Position = base + Vector3.new(0, 0.02, 0), Parent = board })
 					local l = Instance.new("PointLight")
 					l.Color = ACCENT
 					l.Range = 12
 					l.Parent = beam
 				elseif c == "T" then
-					part({ Name = "Button", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, TILE * 0.55, TILE * 0.55), CFrame = CFrame.new(base + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = hex("#FFD166"), Material = Enum.Material.Neon, Parent = board })
+					part({ Name = "Button", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, TILE * 0.55, TILE * 0.55), CFrame = CFrame.new(base + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = hex("#FFD166"), Material = Enum.Material.SmoothPlastic, Parent = board })
 				elseif c == "C" then
 					p.Name = "Crumble"
 				end
@@ -17091,7 +17120,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="66">
+        <Item class="ModuleScript" referent="67">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/cube_logic_art.png. Не редактировать вручную.
@@ -17100,7 +17129,7 @@ return { width = 320, height = 180, rgb = "AAIIAAIJAAIJAAEJAAIJAAEJAAEJAAIJAAEJA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="67">
+        <Item class="ModuleScript" referent="68">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/cube_logic_cover.png. Не редактировать вручную.
@@ -17109,7 +17138,7 @@ return { width = 192, height = 192, rgb = "AAIJAAEJAAEJAAEJAAIJAQIKAAEJAAEJAAIJA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="68">
+        <Item class="ModuleScript" referent="69">
           <Properties>
             <string name="Name">levels</string>
             <string name="Source"><![CDATA[-- Уровни Cube Logic. Символы: S старт, E выход, . пол, # стена, пробел пустота,
@@ -17144,7 +17173,7 @@ return {
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="69">
+        <Item class="ModuleScript" referent="70">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -17187,7 +17216,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="70">
+      <Item class="ModuleScript" referent="71">
         <Properties>
           <string name="Name">Game2048</string>
           <string name="Source"><![CDATA[-- 2048: поле 4×4, ход — сдвиг строки и слияние равных соседей. Партия сохраняется.
@@ -17362,7 +17391,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="71">
+        <Item class="ModuleScript" referent="72">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -17395,10 +17424,10 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="72">
+      <Item class="ModuleScript" referent="73">
         <Properties>
           <string name="Name">NeonDrive</string>
-          <string name="Source"><![CDATA[-- Neon Drive — 3D-гонка по ночному неоновому городу. Две гонки: Clock Run (3 круга, чекпоинты
+          <string name="Source"><![CDATA[-- Neon Drive — 3D-гонка по ночному городу. Две гонки: Clock Run (3 круга, чекпоинты
 -- добавляют время) и Time Trial (свободные круги против призрака лучшего круга).
 -- Машина едет по своей аркадной физике (без физики Roblox): газ, тормоз, занос, ускорение.
 local Track = require(script.Track)
@@ -17455,15 +17484,14 @@ local CAR_PARTS = {
 	{ name = "Spoiler", size = Vector3.new(7.2, 0.3, 1.6), at = Vector3.new(0, 3.7, -6), color = Color3.fromRGB(20, 14, 36), material = Enum.Material.SmoothPlastic },
 	{ name = "SpoilerL", size = Vector3.new(0.3, 1.2, 0.6), at = Vector3.new(-2.6, 3, -6), color = Color3.fromRGB(20, 14, 36) },
 	{ name = "SpoilerR", size = Vector3.new(0.3, 1.2, 0.6), at = Vector3.new(2.6, 3, -6), color = Color3.fromRGB(20, 14, 36) },
-	{ name = "StripeL", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(-3.56, 1.7, 0), color = CYAN, material = Enum.Material.Neon },
-	{ name = "StripeR", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(3.56, 1.7, 0), color = CYAN, material = Enum.Material.Neon },
-	{ name = "Glow", size = Vector3.new(6.4, 0.2, 12), at = Vector3.new(0, 0.6, 0), color = CYAN, material = Enum.Material.Neon, transparency = 0.2 },
-	{ name = "HeadL", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(-2.3, 1.6, 8.75), color = WHITE, material = Enum.Material.Neon },
-	{ name = "HeadR", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(2.3, 1.6, 8.75), color = WHITE, material = Enum.Material.Neon },
-	{ name = "TailL", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(-2.2, 2.1, -6.55), color = Color3.fromRGB(150, 0, 30), material = Enum.Material.Neon },
-	{ name = "TailR", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(2.2, 2.1, -6.55), color = Color3.fromRGB(150, 0, 30), material = Enum.Material.Neon },
-	{ name = "FlameL", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(-1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.Neon, transparency = 1 },
-	{ name = "FlameR", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.Neon, transparency = 1 },
+	{ name = "StripeL", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(-3.56, 1.7, 0), color = WHITE, material = Enum.Material.SmoothPlastic },
+	{ name = "StripeR", size = Vector3.new(0.15, 0.3, 11), at = Vector3.new(3.56, 1.7, 0), color = WHITE, material = Enum.Material.SmoothPlastic },
+	{ name = "HeadL", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(-2.3, 1.6, 8.75), color = Color3.fromRGB(255, 248, 225), material = Enum.Material.Glass },
+	{ name = "HeadR", size = Vector3.new(1.6, 0.4, 0.2), at = Vector3.new(2.3, 1.6, 8.75), color = Color3.fromRGB(255, 248, 225), material = Enum.Material.Glass },
+	{ name = "TailL", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(-2.2, 2.1, -6.55), color = Color3.fromRGB(170, 20, 30), material = Enum.Material.Glass },
+	{ name = "TailR", size = Vector3.new(2, 0.4, 0.2), at = Vector3.new(2.2, 2.1, -6.55), color = Color3.fromRGB(170, 20, 30), material = Enum.Material.Glass },
+	{ name = "FlameL", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(-1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.SmoothPlastic, transparency = 1 },
+	{ name = "FlameR", size = Vector3.new(0.9, 0.7, 3), at = Vector3.new(1.5, 1.4, -8.2), color = AMBER, material = Enum.Material.SmoothPlastic, transparency = 1 },
 	{ name = "WheelFL", size = Vector3.new(1.4, 2.6, 2.6), at = Vector3.new(-3.6, 1.3, 4.2), color = Color3.fromRGB(12, 12, 16), shape = Enum.PartType.Cylinder },
 	{ name = "WheelFR", size = Vector3.new(1.4, 2.6, 2.6), at = Vector3.new(3.6, 1.3, 4.2), color = Color3.fromRGB(12, 12, 16), shape = Enum.PartType.Cylinder },
 	{ name = "WheelRL", size = Vector3.new(1.4, 2.6, 2.6), at = Vector3.new(-3.6, 1.3, -4.2), color = Color3.fromRGB(12, 12, 16), shape = Enum.PartType.Cylinder },
@@ -17471,9 +17499,8 @@ local CAR_PARTS = {
 }
 
 local GHOST_PARTS = {
-	{ name = "Body", size = Vector3.new(7, 1.6, 13), at = Vector3.new(0, 1.7, 0), color = CYAN, material = Enum.Material.Neon, transparency = 0.75 },
-	{ name = "Cabin", size = Vector3.new(5.6, 1.5, 5.5), at = Vector3.new(0, 3.2, -0.8), color = CYAN, material = Enum.Material.Neon, transparency = 0.8 },
-	{ name = "Glow", size = Vector3.new(6.4, 0.2, 12), at = Vector3.new(0, 0.6, 0), color = CYAN, material = Enum.Material.Neon, transparency = 0.6 },
+	{ name = "Body", size = Vector3.new(7, 1.6, 13), at = Vector3.new(0, 1.7, 0), color = CYAN, material = Enum.Material.Glass, transparency = 0.7 },
+	{ name = "Cabin", size = Vector3.new(5.6, 1.5, 5.5), at = Vector3.new(0, 3.2, -0.8), color = CYAN, material = Enum.Material.Glass, transparency = 0.75 },
 }
 
 local function buildCar(parent, spec, name)
@@ -17537,11 +17564,6 @@ function Game.launch(ctx)
 	local built = track:build(ctx.world, checkpoints, PAD_SPOTS)
 	local carParts = buildCar(ctx.world, CAR_PARTS, "Car")
 	local ghostParts = buildCar(ctx.world, GHOST_PARTS, "Ghost")
-	local glowLight = Instance.new("PointLight")
-	glowLight.Color = CYAN
-	glowLight.Range = 16
-	glowLight.Brightness = 3
-	glowLight.Parent = carParts.Glow
 	local headLight = Instance.new("SpotLight")
 	headLight.Range = 60
 	headLight.Angle = 50
@@ -18250,10 +18272,10 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="73">
+        <Item class="ModuleScript" referent="74">
           <Properties>
             <string name="Name">Track</string>
-            <string name="Source"><![CDATA[-- Трасса Neon Drive: замкнутый сплайн, дорога с неоновыми бортами и ночной город вокруг.
+            <string name="Source"><![CDATA[-- Трасса Neon Drive: замкнутый сплайн, дорога с бетонными отбойниками и ночной город вокруг.
 -- Вся математика на Vector3 и числах (без методов CFrame), чтобы работала и в имитации tools/mock.
 local Track = {}
 Track.__index = Track
@@ -18274,7 +18296,6 @@ local VIOLET = Color3.fromRGB(123, 44, 255)
 local CYAN = Color3.fromRGB(0, 229, 255)
 local AMBER = Color3.fromRGB(255, 176, 46)
 Track.Colors = { pink = PINK, violet = VIOLET, cyan = CYAN, amber = AMBER }
-local NEONS = { PINK, VIOLET, CYAN, AMBER, PINK, CYAN }
 
 local function catmull(p0, p1, p2, p3, t)
 	local t2, t3 = t * t, t * t * t
@@ -18422,19 +18443,20 @@ function Track:build(parent, checkpoints, padSpots)
 		beam(road, a - Vector3.new(0, 0.5, 0), b - Vector3.new(0, 0.5, 0), Track.WIDTH, 1, asphalt, Enum.Material.Asphalt)
 		local disc = part(road, Vector3.new(1, Track.WIDTH, Track.WIDTH), CFrame.new(a - Vector3.new(0, 0.55, 0)) * CFrame.Angles(0, 0, math.pi / 2), asphalt, Enum.Material.Asphalt)
 		disc.Shape = Enum.PartType.Cylinder
-		-- неоновые борта по краям, цвет меняется полосами
-		local color = (math.floor(i / 3) % 2 == 0) and PINK or VIOLET
+		-- бетонные отбойники по краям, сверху полоса: через сегмент красная и белая
+		local stripe = (math.floor(i / 3) % 2 == 0) and Color3.fromRGB(200, 40, 40) or Color3.fromRGB(235, 235, 235)
 		local ra, rb = R[i], R[i % N + 1]
 		for _, side in { -1, 1 } do
 			local ea = a + ra * (side * (HALF + 0.6)) + Vector3.new(0, 1.1, 0)
 			local eb = b + rb * (side * (HALF + 0.6)) + Vector3.new(0, 1.1, 0)
-			beam(road, ea, eb, 0.7, 2.2, color, Enum.Material.Neon, 0.15)
+			beam(road, ea, eb, 0.7, 2.2, Color3.fromRGB(150, 148, 145), Enum.Material.Concrete)
+			beam(road, ea + Vector3.new(0, 1.2, 0), eb + Vector3.new(0, 1.2, 0), 0.75, 0.3, stripe, Enum.Material.SmoothPlastic)
 		end
 		-- разметка по центру
 		if i % 2 == 0 then
 			local m = (a + b) / 2 + Vector3.new(0, 0.03, 0)
 			local dir = (b - a).Unit
-			beam(road, m - dir * 4, m + dir * 4, 0.6, 0.06, Color3.fromRGB(200, 170, 255), Enum.Material.Neon, 0.35)
+			beam(road, m - dir * 4, m + dir * 4, 0.6, 0.06, Color3.fromRGB(225, 220, 200), Enum.Material.SmoothPlastic, 0.2)
 		end
 		-- опоры под эстакадой
 		if a.Y - groundY > 4 and i % 3 == 0 then
@@ -18444,12 +18466,12 @@ function Track:build(parent, checkpoints, padSpots)
 				part(road, Vector3.new(3, h, 3), CFrame.new(top.X, groundY + h / 2, top.Z), Color3.fromRGB(30, 26, 46), Enum.Material.Concrete)
 			end
 		end
-		-- фонари: столб, неоновая лампа и свет
+		-- фонари: столб, плафон и тёплый свет
 		if i % 9 == 0 then
 			local side = (i % 18 == 0) and 1 or -1
 			local foot = a + ra * (side * (HALF + 3))
 			part(road, Vector3.new(0.8, 16, 0.8), CFrame.new(foot + Vector3.new(0, 8, 0)), Color3.fromRGB(40, 36, 60), Enum.Material.Metal)
-			local head = beam(road, foot + Vector3.new(0, 16, 0), foot - ra * (side * 6) + Vector3.new(0, 16, 0), 1.2, 0.5, i % 27 == 0 and CYAN or PINK, Enum.Material.Neon)
+			local head = beam(road, foot + Vector3.new(0, 16, 0), foot - ra * (side * 6) + Vector3.new(0, 16, 0), 1.2, 0.5, Color3.fromRGB(255, 226, 170), Enum.Material.Glass)
 			if head then
 				local light = Instance.new("PointLight")
 				light.Color = head.Color
@@ -18469,15 +18491,15 @@ function Track:build(parent, checkpoints, padSpots)
 		local bars = {}
 		for _, side in { -1, 1 } do
 			local foot = a + r * (side * (HALF + 2))
-			table.insert(bars, part(g, Vector3.new(2, 20, 2), CFrame.new(foot + Vector3.new(0, 10, 0)), color, Enum.Material.Neon))
+			table.insert(bars, part(g, Vector3.new(2, 20, 2), CFrame.new(foot + Vector3.new(0, 10, 0)), color, Enum.Material.SmoothPlastic))
 		end
-		table.insert(bars, beam(g, a - r * (HALF + 3) + Vector3.new(0, 20, 0), a + r * (HALF + 3) + Vector3.new(0, 20, 0), 2, isStart and 4 or 1.6, color, Enum.Material.Neon))
+		table.insert(bars, beam(g, a - r * (HALF + 3) + Vector3.new(0, 20, 0), a + r * (HALF + 3) + Vector3.new(0, 20, 0), 2, isStart and 4 or 1.6, color, Enum.Material.SmoothPlastic))
 		if isStart then
 			for row = 0, 1 do
 				for col = 0, 10 do
 					local pos = a + r * (-HALF + 2 + col * 4) + t * (row * 4 - 2) + Vector3.new(0, 0.04, 0)
 					local white = (row + col) % 2 == 0
-					part(g, Vector3.new(4, 0.08, 4), CFrame.lookAt(pos, pos + t), white and Color3.new(0.95, 0.95, 1) or Color3.fromRGB(10, 10, 16), white and Enum.Material.Neon or Enum.Material.SmoothPlastic)
+					part(g, Vector3.new(4, 0.08, 4), CFrame.lookAt(pos, pos + t), white and Color3.new(0.95, 0.95, 1) or Color3.fromRGB(10, 10, 16), Enum.Material.SmoothPlastic)
 				end
 			end
 			local sign = beam(g, a - r * 14 + Vector3.new(0, 25, 0), a + r * 14 + Vector3.new(0, 25, 0), 1, 6, Color3.fromRGB(16, 8, 30), Enum.Material.SmoothPlastic)
@@ -18509,16 +18531,16 @@ function Track:build(parent, checkpoints, padSpots)
 		end
 	end
 
-	-- ускорители: светящаяся плита со стрелками
+	-- ускорители: голубая плита со стрелками
 	local pads = {}
 	for _, spot in padSpots do
 		local a, r, t = S[spot.index], R[spot.index], self.tangents[spot.index]
 		local center = a + r * spot.offset + Vector3.new(0, 0.05, 0)
-		part(road, Vector3.new(12, 0.1, 16), CFrame.lookAt(center, center + t), Color3.fromRGB(0, 140, 180), Enum.Material.Neon, 0.3)
+		part(road, Vector3.new(12, 0.1, 16), CFrame.lookAt(center, center + t), Color3.fromRGB(30, 120, 170), Enum.Material.SmoothPlastic)
 		for k = 0, 2 do
 			local tip = center + t * (k * 5 - 3) + Vector3.new(0, 0.08, 0)
 			for _, side in { -1, 1 } do
-				beam(road, tip - t * 3 + r * (side * 4), tip, 1, 0.08, CYAN, Enum.Material.Neon)
+				beam(road, tip - t * 3 + r * (side * 4), tip, 1, 0.08, Color3.fromRGB(235, 245, 255), Enum.Material.SmoothPlastic)
 			end
 		end
 		table.insert(pads, { index = spot.index, offset = spot.offset, center = center })
@@ -18528,17 +18550,8 @@ function Track:build(parent, checkpoints, padSpots)
 	-- город
 	local city = Instance.new("Model")
 	city.Name = "City"
-	local ground = part(city, Vector3.new(maxX - minX + 1400, 1, maxZ - minZ + 1400), CFrame.new((minX + maxX) / 2, groundY - 0.5, (minZ + maxZ) / 2), Color3.fromRGB(8, 6, 18), Enum.Material.SmoothPlastic)
+	local ground = part(city, Vector3.new(maxX - minX + 1400, 1, maxZ - minZ + 1400), CFrame.new((minX + maxX) / 2, groundY - 0.5, (minZ + maxZ) / 2), Color3.fromRGB(38, 40, 44), Enum.Material.Asphalt)
 	ground.Name = "Ground"
-	-- неоновая сетка на земле
-	local cx, cz = (minX + maxX) / 2, (minZ + maxZ) / 2
-	local spanX, spanZ = maxX - minX + 1400, maxZ - minZ + 1400
-	for x = -spanX / 2, spanX / 2, 120 do
-		part(city, Vector3.new(0.4, 0.05, spanZ), CFrame.new(cx + x, groundY + 0.02, cz), VIOLET, Enum.Material.Neon, 0.75)
-	end
-	for z = -spanZ / 2, spanZ / 2, 120 do
-		part(city, Vector3.new(spanX, 0.05, 0.4), CFrame.new(cx, groundY + 0.02, cz + z), VIOLET, Enum.Material.Neon, 0.75)
-	end
 
 	local function building(pos, t, w, d, h, detail)
 		local body = Color3.fromRGB(rng:NextInteger(12, 26), rng:NextInteger(10, 20), rng:NextInteger(28, 48))
@@ -18546,29 +18559,17 @@ function Track:build(parent, checkpoints, padSpots)
 		local look = center + t
 		part(city, Vector3.new(w, h, d), CFrame.lookAt(center, look), body, Enum.Material.SmoothPlastic)
 		local r = Vector3.new(-t.Z, 0, t.X)
-		local neon = NEONS[rng:NextInteger(1, #NEONS)]
-		-- вертикальные неоновые рёбра по углам
-		for _, sx in { -1, 1 } do
-			for _, sz in { -1, 1 } do
-				if detail or sx == sz then
-					local corner = center + r * (sx * (w / 2 + 0.1)) + t * (sz * (d / 2 + 0.1))
-					part(city, Vector3.new(0.5, h, 0.5), CFrame.new(corner), neon, Enum.Material.Neon, 0.1)
-				end
-			end
-		end
 		if detail then
-			-- полосы окон по периметру
+			-- полосы окон по периметру: часть горит тёплым светом, часть тёмная
 			local bands = math.clamp(math.floor(h / 28), 1, 5)
 			for k = 1, bands do
 				local y = groundY + h * k / (bands + 1)
-				local c = rng:NextNumber(0, 1) < 0.7 and neon or NEONS[rng:NextInteger(1, #NEONS)]
+				local lit = rng:NextNumber(0, 1) < 0.6
+				local c = lit and Color3.fromRGB(235, 200, 130) or Color3.fromRGB(40, 46, 60)
 				local p = Vector3.new(center.X, y, center.Z)
-				part(city, Vector3.new(w + 0.4, 1.2, d + 0.4), CFrame.lookAt(p, p + t), c, Enum.Material.Neon, rng:NextNumber(0, 1) * 0.5)
+				part(city, Vector3.new(w + 0.4, 1.2, d + 0.4), CFrame.lookAt(p, p + t), c, Enum.Material.Glass)
 			end
 		end
-		-- огонёк на крыше
-		local top = Vector3.new(center.X, groundY + h + 1, center.Z)
-		part(city, Vector3.new(2, 2, 2), CFrame.new(top), Color3.fromRGB(255, 40, 60), Enum.Material.Neon)
 	end
 
 	for i = 1, N, 3 do
@@ -18593,10 +18594,6 @@ function Track:build(parent, checkpoints, padSpots)
 			end
 		end
 	end
-	-- закатное неоновое солнце на горизонте
-	local sunPos = Vector3.new(cx, groundY + 260, maxZ + 1800)
-	local sun = part(city, Vector3.new(2, 900, 900), CFrame.lookAt(sunPos, Vector3.new(cx, groundY + 260, cz)) * CFrame.Angles(0, math.pi / 2, 0), Color3.fromRGB(255, 90, 120), Enum.Material.Neon)
-	sun.Shape = Enum.PartType.Cylinder
 	city.Parent = parent
 
 	return { gates = gates, pads = pads, groundY = groundY }
@@ -18606,7 +18603,7 @@ return Track
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="74">
+        <Item class="ModuleScript" referent="75">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/neon_drive_art.png. Не редактировать вручную.
@@ -18615,7 +18612,7 @@ return { width = 320, height = 180, rgb = "AwECAQABAQABAQABAQABAQABAQABAQABAQABA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="75">
+        <Item class="ModuleScript" referent="76">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/neon_drive_cover.png. Не редактировать вручную.
@@ -18624,7 +18621,7 @@ return { width = 192, height = 192, rgb = "HBJiHxVrIRZuGxNmEAxOBwc3AQEkQzx8saPzz
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="76">
+        <Item class="ModuleScript" referent="77">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -18666,7 +18663,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="77">
+      <Item class="ModuleScript" referent="78">
         <Properties>
           <string name="Name">NightSpider</string>
           <string name="Source"><![CDATA[-- Night Spider — герой-паук в ночном неоновом городе: полёт на паутине, бег по стенам,
@@ -18691,10 +18688,6 @@ local CRIMSON = Color3.fromRGB(205, 24, 48)
 local NAVY = Color3.fromRGB(18, 28, 70)
 local WHITE = Color3.new(1, 1, 1)
 local AMBER = Color3.fromRGB(255, 190, 40)
-local NEONS = {
-	Color3.fromRGB(0, 230, 255), Color3.fromRGB(255, 60, 160), Color3.fromRGB(255, 180, 40),
-	Color3.fromRGB(140, 90, 255), Color3.fromRGB(60, 255, 150),
-}
 local CONCRETE = {
 	Color3.fromRGB(38, 42, 58), Color3.fromRGB(52, 50, 64), Color3.fromRGB(30, 36, 48),
 	Color3.fromRGB(60, 58, 70), Color3.fromRGB(44, 48, 70),
@@ -18771,19 +18764,19 @@ local function buildCity(world)
 				local d = isTower and 56 or 48 + rnd() * 30
 				local h = isTower and 380 or math.floor(60 + rnd() ^ 1.4 * 210)
 				local color = CONCRETE[1 + math.floor(rnd() * #CONCRETE)]
-				local neon = NEONS[1 + math.floor(rnd() * #NEONS)]
 				local center = c + Vector3.new(0, h / 2, 0)
 				part(city, Vector3.new(w, h, d), CFrame.new(center), color, isTower and Enum.Material.Glass or Enum.Material.Concrete, 0)
-				-- неоновые пояса окон: одна деталь-кольцо на этаж
+				-- пояса окон: одна деталь-кольцо на этаж, часть горит тёплым светом
 				local step = isTower and 16 or 22
 				for y = step, h - 6, step do
-					part(city, Vector3.new(w + 0.6, 1, d + 0.6), CFrame.new(c + Vector3.new(0, y, 0)), neon, Enum.Material.Neon, 0.25)
+					local lit = rnd() < 0.55
+					part(city, Vector3.new(w + 0.6, 1, d + 0.6), CFrame.new(c + Vector3.new(0, y, 0)), lit and Color3.fromRGB(235, 200, 130) or Color3.fromRGB(40, 46, 60), Enum.Material.Glass, 0)
 				end
 				part(city, Vector3.new(w + 1, 1.6, d + 1), CFrame.new(c + Vector3.new(0, h + 0.8, 0)), Color3.fromRGB(80, 80, 92), Enum.Material.Concrete)
 				local roof = c + Vector3.new(0, h, 0)
 				if isTower then
 					part(city, Vector3.new(3, 60, 3), CFrame.new(roof + Vector3.new(0, 30, 0)), Color3.fromRGB(90, 90, 100), Enum.Material.Metal)
-					local tip = part(city, Vector3.new(4, 4, 4), CFrame.new(roof + Vector3.new(0, 62, 0)), CRIMSON, Enum.Material.Neon, 0, Enum.PartType.Ball)
+					local tip = part(city, Vector3.new(4, 4, 4), CFrame.new(roof + Vector3.new(0, 62, 0)), CRIMSON, Enum.Material.Glass, 0, Enum.PartType.Ball)
 					local light = Instance.new("PointLight")
 					light.Color = CRIMSON
 					light.Range = 60
@@ -18796,7 +18789,7 @@ local function buildCity(world)
 				elseif rnd() < 0.5 then
 					local p = roof + Vector3.new((rnd() - 0.5) * (w - 10), 0, (rnd() - 0.5) * (d - 10))
 					part(city, Vector3.new(0.6, 18, 0.6), CFrame.new(p + Vector3.new(0, 9, 0)), Color3.fromRGB(120, 120, 130), Enum.Material.Metal)
-					part(city, Vector3.new(1.2, 1.2, 1.2), CFrame.new(p + Vector3.new(0, 18.5, 0)), Color3.fromRGB(255, 40, 40), Enum.Material.Neon, 0, Enum.PartType.Ball)
+					part(city, Vector3.new(1.2, 1.2, 1.2), CFrame.new(p + Vector3.new(0, 18.5, 0)), Color3.fromRGB(255, 40, 40), Enum.Material.Glass, 0, Enum.PartType.Ball)
 				end
 				local b = {
 					min = c - Vector3.new(w / 2, 0, d / 2),
@@ -18821,7 +18814,7 @@ local function buildCity(world)
 			if (i + j) % 2 == 0 then
 				local lp = p + Vector3.new(14, 0, 14)
 				part(city, Vector3.new(0.8, 16, 0.8), CFrame.new(lp + Vector3.new(0, 8, 0)), Color3.fromRGB(40, 40, 48), Enum.Material.Metal)
-				local bulb = part(city, Vector3.new(2, 1, 2), CFrame.new(lp + Vector3.new(0, 16.5, 0)), Color3.fromRGB(255, 220, 160), Enum.Material.Neon)
+				local bulb = part(city, Vector3.new(2, 1, 2), CFrame.new(lp + Vector3.new(0, 16.5, 0)), Color3.fromRGB(255, 220, 160), Enum.Material.Glass)
 				local light = Instance.new("PointLight")
 				light.Color = Color3.fromRGB(255, 210, 150)
 				light.Range = 45
@@ -18869,13 +18862,13 @@ local HERO = {
 	{ name = "Emblem", size = Vector3.new(0.9, 0.9, 0.1), at = Vector3.new(0, 3.5, -0.52), color = Color3.fromRGB(10, 10, 14) },
 	{ name = "Belt", size = Vector3.new(2.05, 0.35, 1.05), at = Vector3.new(0, 2.2, 0), color = NAVY },
 	{ name = "Head", size = Vector3.new(1.3, 1.4, 1.2), at = Vector3.new(0, 5, 0), color = CRIMSON },
-	{ name = "EyeL", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(-0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.Neon },
-	{ name = "EyeR", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.Neon },
+	{ name = "EyeL", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(-0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.SmoothPlastic },
+	{ name = "EyeR", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.SmoothPlastic },
 	{ name = "ArmL", size = Vector3.new(0.65, 2.1, 0.65), at = Vector3.new(-1.35, 4.2, 0), color = CRIMSON, limb = "b" },
 	{ name = "ArmR", size = Vector3.new(0.65, 2.1, 0.65), at = Vector3.new(1.35, 4.2, 0), color = CRIMSON, limb = "up" },
 	{ name = "LegL", size = Vector3.new(0.85, 2.1, 0.85), at = Vector3.new(-0.5, 2.1, 0), color = NAVY, limb = "a" },
 	{ name = "LegR", size = Vector3.new(0.85, 2.1, 0.85), at = Vector3.new(0.5, 2.1, 0), color = NAVY, limb = "b" },
-	{ name = "Sense", size = Vector3.new(0.6, 0.6, 0.6), at = Vector3.new(0, 6.6, 0), color = AMBER, material = Enum.Material.Neon, transparency = 1, shape = Enum.PartType.Ball },
+	{ name = "Sense", size = Vector3.new(0.6, 0.6, 0.6), at = Vector3.new(0, 6.6, 0), color = AMBER, material = Enum.Material.SmoothPlastic, transparency = 1, shape = Enum.PartType.Ball },
 }
 
 local THUG = {
@@ -18925,7 +18918,7 @@ function Game.launch(ctx)
 			local got = tokenStr:sub(k, k) == "1"
 			local p
 			if not got then
-				p = part(ctx.world, Vector3.new(0.6, 4, 4), CFrame.new(pos), AMBER, Enum.Material.Neon, 0, Enum.PartType.Cylinder)
+				p = part(ctx.world, Vector3.new(0.6, 4, 4), CFrame.new(pos), AMBER, Enum.Material.Metal, 0, Enum.PartType.Cylinder)
 				local light = Instance.new("PointLight")
 				light.Color = AMBER
 				light.Range = 18
@@ -18947,7 +18940,7 @@ function Game.launch(ctx)
 
 	-- Герой
 	local fig = buildFigure(ctx.world, HERO)
-	local rope = part(ctx.world, Vector3.new(0.18, 0.18, 1), CFrame.new(BASE), Color3.fromRGB(240, 240, 250), Enum.Material.Neon, 1)
+	local rope = part(ctx.world, Vector3.new(0.18, 0.18, 1), CFrame.new(BASE), Color3.fromRGB(240, 240, 250), Enum.Material.SmoothPlastic, 1)
 	local START = Vector3.new(tower.max.X + 20, GY, tower.max.Z + 20)
 	local hero = {
 		pos = START,
@@ -19153,7 +19146,7 @@ function Game.launch(ctx)
 		return t
 	end
 
-	local beacon = part(ctx.world, Vector3.new(500, 10, 10), CFrame.new(BASE), CRIMSON, Enum.Material.Neon, 1, Enum.PartType.Cylinder)
+	local beacon = part(ctx.world, Vector3.new(500, 10, 10), CFrame.new(BASE), CRIMSON, Enum.Material.SmoothPlastic, 1, Enum.PartType.Cylinder)
 	local function startCrime()
 		local options = {}
 		for _, p in crossings do
@@ -19865,7 +19858,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="78">
+        <Item class="ModuleScript" referent="79">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -19907,7 +19900,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="79">
+      <Item class="ModuleScript" referent="80">
         <Properties>
           <string name="Name">OrbitStrike</string>
           <string name="Source"><![CDATA[-- Orbit Strike: 2D twin-stick shooter on the canvas. Protect the space station in the centre from waves of drones.
@@ -20840,7 +20833,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="80">
+        <Item class="ModuleScript" referent="81">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/orbit_strike_art.png. Не редактировать вручную.
@@ -20849,7 +20842,7 @@ return { width = 320, height = 180, rgb = "AQECAAACAQECAAACAQECAQECAAACAQECAQECA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="81">
+        <Item class="ModuleScript" referent="82">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/orbit_strike_cover.png. Не редактировать вручную.
@@ -20858,7 +20851,7 @@ return { width = 192, height = 192, rgb = "AQECAAACAQECAQECAQECAQEDAAACAAACAQECA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="82">
+        <Item class="ModuleScript" referent="83">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -20899,7 +20892,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="83">
+      <Item class="ModuleScript" referent="84">
         <Properties>
           <string name="Name">PixelQuest</string>
           <string name="Source"><![CDATA[-- Pixel Quest — 2D-платформер на GUI: уровни из плиток, монеты, секретные кристаллы, враги и босс.
@@ -22497,7 +22490,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="84">
+        <Item class="ModuleScript" referent="85">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/pixel_quest_art.png. Не редактировать вручную.
@@ -22506,7 +22499,7 @@ return { width = 320, height = 180, rgb = "SZSpSZSoSZOoSZOoSZOoSZOoSZOoSZSpSZOoS
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="85">
+        <Item class="ModuleScript" referent="86">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/pixel_quest_cover.png. Не редактировать вручную.
@@ -22515,7 +22508,7 @@ return { width = 192, height = 192, rgb = "Q4+iQo6iQo6iQ4+iQ4+iQI6hT5Kkjqq1XpeoQ
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="86">
+        <Item class="ModuleScript" referent="87">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест Pixel Quest: читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -22554,7 +22547,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="87">
+      <Item class="ModuleScript" referent="88">
         <Properties>
           <string name="Name">Pong</string>
           <string name="Source"><![CDATA[-- Пинг-понг против компьютера: игрок слева, до 7 очков.
@@ -22689,7 +22682,7 @@ end
 return Pong
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="88">
+        <Item class="ModuleScript" referent="89">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -22722,7 +22715,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="89">
+      <Item class="ModuleScript" referent="90">
         <Properties>
           <string name="Name">RocketBall</string>
           <string name="Source"><![CDATA[-- Rocket Ball — футбол на машинах 1 на 1 против бота. 3D-стадион в ctx.world, HUD в ctx.gui.
@@ -22813,7 +22806,7 @@ function Game.launch(ctx)
 	-- Разметка
 	local LINE = Color3.fromRGB(235, 245, 255)
 	local function line(x, z, sx, sz)
-		part({ Name = "Line", Size = Vector3.new(sx, 0.1, sz), CFrame = at(x, 0.02, z), Material = Enum.Material.Neon, Color = LINE, Transparency = 0.25, Parent = arena })
+		part({ Name = "Line", Size = Vector3.new(sx, 0.1, sz), CFrame = at(x, 0.02, z), Material = Enum.Material.SmoothPlastic, Color = LINE, Transparency = 0.25, Parent = arena })
 	end
 	line(0, 0, FIELD_X * 2, 0.6)
 	line(-FIELD_X + 0.6, 0, 0.6, FIELD_Z * 2)
@@ -22829,7 +22822,7 @@ function Game.launch(ctx)
 		part({
 			Name = "Circle", Size = Vector3.new(0.6, 0.1, 2.9),
 			CFrame = at(math.cos(a) * 14, 0.02, math.sin(a) * 14) * CFrame.Angles(0, -a, 0),
-			Material = Enum.Material.Neon, Color = LINE, Transparency = 0.25, Parent = arena,
+			Material = Enum.Material.SmoothPlastic, Color = LINE, Transparency = 0.25, Parent = arena,
 		})
 	end
 
@@ -22839,7 +22832,7 @@ function Game.launch(ctx)
 		part({ Name = "Wall", Size = Vector3.new(sx, sy, sz), CFrame = at(x, y, z), Material = Enum.Material.Glass, Color = GLASS, Transparency = 0.82, Parent = arena })
 	end
 	local function rail(x, y, z, sx, sz, color)
-		part({ Name = "Rail", Size = Vector3.new(sx, 0.6, sz), CFrame = at(x, y, z), Material = Enum.Material.Neon, Color = color, Parent = arena })
+		part({ Name = "Rail", Size = Vector3.new(sx, 0.6, sz), CFrame = at(x, y, z), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 	end
 	for _, s in { -1, 1 } do
 		wall(s * (FIELD_X + 0.5), CEILING / 2, 0, 1, CEILING, FIELD_Z * 2)
@@ -22858,14 +22851,14 @@ function Game.launch(ctx)
 		local zFront, zBack = s * FIELD_Z, s * (FIELD_Z + GOAL_D)
 		local zMid = (zFront + zBack) / 2
 		for _, px in { -GOAL_W, GOAL_W } do
-			part({ Name = "Post", Size = Vector3.new(1, GOAL_H, 1), CFrame = at(px, GOAL_H / 2, zFront), Material = Enum.Material.Neon, Color = color, Parent = arena })
+			part({ Name = "Post", Size = Vector3.new(1, GOAL_H, 1), CFrame = at(px, GOAL_H / 2, zFront), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 			part({ Name = "Net", Size = Vector3.new(0.4, GOAL_H, GOAL_D), CFrame = at(px, GOAL_H / 2, zMid), Material = Enum.Material.ForceField, Color = color, Parent = arena })
 		end
-		part({ Name = "Crossbar", Size = Vector3.new(GOAL_W * 2 + 1, 1, 1), CFrame = at(0, GOAL_H, zFront), Material = Enum.Material.Neon, Color = color, Parent = arena })
+		part({ Name = "Crossbar", Size = Vector3.new(GOAL_W * 2 + 1, 1, 1), CFrame = at(0, GOAL_H, zFront), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 		part({ Name = "Net", Size = Vector3.new(GOAL_W * 2, GOAL_H, 0.4), CFrame = at(0, GOAL_H / 2, zBack), Material = Enum.Material.ForceField, Color = color, Parent = arena })
 		part({ Name = "Net", Size = Vector3.new(GOAL_W * 2, 0.4, GOAL_D), CFrame = at(0, GOAL_H, zMid), Material = Enum.Material.ForceField, Color = color, Parent = arena })
 		part({ Name = "GoalFloor", Size = Vector3.new(GOAL_W * 2, 1, GOAL_D), CFrame = at(0, -0.5, zMid), Color = color:Lerp(Color3.new(0, 0, 0), 0.6), Parent = arena })
-		local glow = part({ Name = "GoalGlow", Size = Vector3.new(GOAL_W * 2, 0.1, 1.2), CFrame = at(0, 0.03, zFront), Material = Enum.Material.Neon, Color = color, Parent = arena })
+		local glow = part({ Name = "GoalGlow", Size = Vector3.new(GOAL_W * 2, 0.1, 1.2), CFrame = at(0, 0.03, zFront), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 		glow.Transparency = 0.1
 	end
 
@@ -22886,7 +22879,7 @@ function Game.launch(ctx)
 		for _, z in { -FIELD_Z - 6, FIELD_Z + 6 } do
 			local x = s * (FIELD_X + 40)
 			part({ Name = "Mast", Size = Vector3.new(1.5, 60, 1.5), CFrame = at(x, 30, z), Color = Color3.fromRGB(60, 66, 90), Parent = arena })
-			local lamp = part({ Name = "Lamp", Size = Vector3.new(10, 5, 1), CFrame = CFrame.lookAt(vec(x, 60, z), vec(0, 0, 0)), Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 250, 230), Parent = arena })
+			local lamp = part({ Name = "Lamp", Size = Vector3.new(10, 5, 1), CFrame = CFrame.lookAt(vec(x, 60, z), vec(0, 0, 0)), Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(255, 250, 230), Parent = arena })
 			local spot = Instance.new("SpotLight")
 			spot.Range = 60
 			spot.Angle = 70
@@ -22914,13 +22907,13 @@ function Game.launch(ctx)
 			Shape = Enum.PartType.Cylinder,
 			Size = Vector3.new(0.3, big and 6 or 3.4, big and 6 or 3.4),
 			CFrame = at(x, 0.1, z) * CFrame.Angles(0, 0, math.pi / 2),
-			Material = Enum.Material.Neon,
+			Material = Enum.Material.SmoothPlastic,
 			Color = Color3.fromRGB(255, 196, 40),
 			Parent = arena,
 		})
 		local orb
 		if big then
-			orb = part({ Name = "BoostOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), CFrame = at(x, 2.5, z), Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 160, 20), Parent = arena })
+			orb = part({ Name = "BoostOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), CFrame = at(x, 2.5, z), Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(255, 160, 20), Parent = arena })
 		end
 		table.insert(pads, { x = x, z = z, big = big, timer = 0, part = p, orb = orb })
 	end
@@ -22943,7 +22936,7 @@ function Game.launch(ctx)
 	})
 	local ballRing = part({
 		Name = "BallRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, BALL_R * 2 + 0.1, BALL_R * 2 + 0.1), -- светящийся пояс вокруг мяча
-		Material = Enum.Material.Neon, Color = Color3.fromRGB(0, 220, 255),
+		Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(0, 220, 255),
 	})
 	local ballLight = Instance.new("PointLight")
 	ballLight.Range = 14
@@ -22968,19 +22961,19 @@ function Game.launch(ctx)
 		piece("Body", Vector3.new(5, 1.5, 8.4), CFrame.new(0, 1.45, 0), {})
 		piece("Nose", Vector3.new(4.6, 0.8, 2), CFrame.new(0, 1.0, -4.6), { Color = dark })
 		piece("Cabin", Vector3.new(4, 1.3, 3.8), CFrame.new(0, 2.85, 0.9), { Color = Color3.fromRGB(20, 26, 40), Material = Enum.Material.Glass })
-		piece("Stripe", Vector3.new(1, 0.1, 8.5), CFrame.new(0, 2.22, 0), { Color = Color3.new(1, 1, 1), Material = Enum.Material.Neon })
+		piece("Stripe", Vector3.new(1, 0.1, 8.5), CFrame.new(0, 2.22, 0), { Color = Color3.new(1, 1, 1), Material = Enum.Material.SmoothPlastic })
 		piece("Spoiler", Vector3.new(5.2, 0.3, 1.3), CFrame.new(0, 3.1, 3.7), { Color = dark })
 		piece("SpoilerPost", Vector3.new(0.3, 0.9, 0.5), CFrame.new(-1.8, 2.5, 3.7), { Color = dark })
 		piece("SpoilerPost", Vector3.new(0.3, 0.9, 0.5), CFrame.new(1.8, 2.5, 3.7), { Color = dark })
 		for _, hx in { -1.6, 1.6 } do
-			piece("Headlight", Vector3.new(0.9, 0.4, 0.2), CFrame.new(hx, 1.6, -4.25), { Color = Color3.fromRGB(255, 250, 220), Material = Enum.Material.Neon })
+			piece("Headlight", Vector3.new(0.9, 0.4, 0.2), CFrame.new(hx, 1.6, -4.25), { Color = Color3.fromRGB(255, 250, 220), Material = Enum.Material.SmoothPlastic })
 		end
 		for _, wx in { -2.6, 2.6 } do
 			for _, wz in { -2.9, 2.9 } do
 				piece("Wheel", Vector3.new(1.1, 2.2, 2.2), CFrame.new(wx, 1.1, wz), { Color = Color3.fromRGB(18, 18, 22), Shape = Enum.PartType.Cylinder })
 			end
 		end
-		car.flame = piece("Flame", Vector3.new(1.8, 1, 2.6), CFrame.new(0, 1.5, 5.6), { Color = Color3.fromRGB(255, 120, 30), Material = Enum.Material.Neon })
+		car.flame = piece("Flame", Vector3.new(1.8, 1, 2.6), CFrame.new(0, 1.5, 5.6), { Color = Color3.fromRGB(255, 120, 30), Material = Enum.Material.SmoothPlastic })
 		local flameLight = Instance.new("PointLight")
 		flameLight.Range = 10
 		flameLight.Brightness = 2
@@ -23220,10 +23213,10 @@ function Game.launch(ctx)
 
 	---------------------------------------------------------------- эффекты
 	local function goalBurst(z, color)
-		local burst = part({ Name = "GoalBurst", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.Neon, Color = color })
+		local burst = part({ Name = "GoalBurst", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.SmoothPlastic, Color = color })
 		table.insert(effects, { part = burst, t = 0, life = 1.2, grow = 70 })
 		for _ = 1, 24 do
-			local bit = part({ Name = "Confetti", Size = Vector3.new(0.8, 0.8, 0.8), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.Neon, Color = CROWD[math.random(#CROWD)] })
+			local bit = part({ Name = "Confetti", Size = Vector3.new(0.8, 0.8, 0.8), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.SmoothPlastic, Color = CROWD[math.random(#CROWD)] })
 			table.insert(effects, {
 				part = bit, t = 0, life = 2,
 				x = 0, y = GOAL_H / 2, z = z,
@@ -23878,7 +23871,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="90">
+        <Item class="ModuleScript" referent="91">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/rocket_ball_art.png. Не редактировать вручную.
@@ -23887,7 +23880,7 @@ return { width = 320, height = 180, rgb = "AA8kAA8lAA8kAA8lAA8lAA8kAA8lAA8lAA8lA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="91">
+        <Item class="ModuleScript" referent="92">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/rocket_ball_cover.png. Не редактировать вручную.
@@ -23896,7 +23889,7 @@ return { width = 192, height = 192, rgb = "AA8lAA8lAA8lAA8lAA8lAQ8lAA8lAA8lAA8lA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="92">
+        <Item class="ModuleScript" referent="93">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест Rocket Ball: читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -23939,7 +23932,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="93">
+      <Item class="ModuleScript" referent="94">
         <Properties>
           <string name="Name">SkyHop</string>
           <string name="Source"><![CDATA[-- Sky Hop: птичка падает, ✕ — взмах; столбы едут справа налево, между ними щель.
@@ -24074,7 +24067,7 @@ end
 return SkyHop
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="94">
+        <Item class="ModuleScript" referent="95">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -24106,7 +24099,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="95">
+      <Item class="ModuleScript" referent="96">
         <Properties>
           <string name="Name">Snake</string>
           <string name="Source"><![CDATA[-- Змейка на сетке 24×15: каждая клетка — Frame, раз в шаг перекрашиваем.
@@ -24237,7 +24230,7 @@ end
 return Snake
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="96">
+        <Item class="ModuleScript" referent="97">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -24270,7 +24263,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="97">
+      <Item class="ModuleScript" referent="98">
         <Properties>
           <string name="Name">StarPilot</string>
           <string name="Source"><![CDATA[-- Star Pilot — пример 2D-игры на GUI. Использует ctx.input, ctx.save, ctx.trophies, ctx.audio, ctx:Loop.
@@ -24521,7 +24514,7 @@ end
 return Game
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="98">
+        <Item class="ModuleScript" referent="99">
           <Properties>
             <string name="Name">art</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/star_pilot_art.png. Не редактировать вручную.
@@ -24530,7 +24523,7 @@ return { width = 320, height = 180, rgb = "AQEDAAADAQEDAQADAQEDAQEDAQADAQEDAQEDA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="99">
+        <Item class="ModuleScript" referent="100">
           <Properties>
             <string name="Name">cover</string>
             <string name="Source"><![CDATA[-- Сгенерировано blender/export_luau.py из assets/renders/star_pilot_cover.png. Не редактировать вручную.
@@ -24539,7 +24532,7 @@ return { width = 192, height = 192, rgb = "AAECAAECAAECAAECAAECAAECAAECAAACAQECA
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="100">
+        <Item class="ModuleScript" referent="101">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Манифест читается системой без запуска игры (плитка, магазин, трофеи, сервер).
@@ -24576,7 +24569,7 @@ return {
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="101">
+      <Item class="ModuleScript" referent="102">
         <Properties>
           <string name="Name">_Template</string>
           <string name="Source"><![CDATA[-- Шаблон: 2D-интерфейс в ctx.gui + 3D-объект в ctx.world, счётчик в сохранениях и трофей.
@@ -24590,7 +24583,7 @@ function Template.launch(ctx)
 	cube.Anchored = true
 	cube.Size = Vector3.new(4, 4, 4)
 	cube.Color = Color3.fromRGB(58, 134, 255)
-	cube.Material = Enum.Material.Neon
+	cube.Material = Enum.Material.SmoothPlastic
 	cube.Position = Vector3.new(0, 105, 0)
 	cube.Parent = ctx.world
 	ctx.camera.CameraType = Enum.CameraType.Scriptable
@@ -24637,7 +24630,7 @@ end
 return Template
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="102">
+        <Item class="ModuleScript" referent="103">
           <Properties>
             <string name="Name">manifest</string>
             <string name="Source"><![CDATA[-- Шаблон приложения. Скопируйте папку _Template, переименуйте и уберите hidden = true.
@@ -24667,17 +24660,17 @@ return {
         </Item>
       </Item>
     </Item>
-    <Item class="Folder" referent="103">
+    <Item class="Folder" referent="104">
       <Properties>
         <string name="Name">PS5Assets</string>
       </Properties>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="104">
+  <Item class="ServerScriptService" referent="105">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="105">
+    <Item class="Script" referent="106">
       <Properties>
         <string name="Name">ChillZone</string>
         <token name="RunContext">0</token>
@@ -24827,9 +24820,10 @@ local function buildScenery(data)
 		p.Size = size
 		p.CFrame = cf
 		p.Color = color3(style.color)
-		p.Material = M[style.material]
+		-- неон в проекте не используем: старые стили из Blender становятся пластиком
+		p.Material = style.material == "Neon" and M.SmoothPlastic or M[style.material]
 		p.Transparency = style.transparency
-		p.CastShadow = style.material ~= "Neon" and style.material ~= "Glass" and size.Magnitude > 1.2
+		p.CastShadow = style.material ~= "Glass" and size.Magnitude > 1.2
 		p.TopSurface = Enum.SurfaceType.Smooth
 		p.BottomSurface = Enum.SurfaceType.Smooth
 		if (row[19] or 1) > 1 then
@@ -25156,7 +25150,7 @@ for _, plr in Players:GetPlayers() do
 	task.spawn(onPlayerAdded, plr)
 end
 
--- Вечернее освещение и постобработка
+-- Вечернее освещение
 Lighting.ClockTime = 19.3
 Lighting.Brightness = 1.6
 Lighting.Ambient = rgb(55, 50, 75)
@@ -25173,23 +25167,16 @@ if not Lighting:FindFirstChildOfClass("Atmosphere") then
 	atmosphere.Haze = 1.5
 	atmosphere.Parent = Lighting
 end
-local function effect(className, props)
-	if Lighting:FindFirstChildOfClass(className) then
-		return
+-- Без Bloom/SunRays/цветокоррекции: со свечением мир и игры пересвечивались
+for _, e in Lighting:GetChildren() do
+	if e:IsA("BloomEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") then
+		e:Destroy()
 	end
-	local e = Instance.new(className)
-	for k, v in props do
-		e[k] = v
-	end
-	e.Parent = Lighting
 end
-effect("BloomEffect", { Intensity = 0.9, Size = 28, Threshold = 1.6 })
-effect("ColorCorrectionEffect", { Brightness = 0.02, Contrast = 0.12, Saturation = 0.12, TintColor = rgb(255, 244, 236) })
-effect("SunRaysEffect", { Intensity = 0.05, Spread = 0.6 })
 ]]></string>
       </Properties>
     </Item>
-    <Item class="Script" referent="106">
+    <Item class="Script" referent="107">
       <Properties>
         <string name="Name">PS5Server</string>
         <token name="RunContext">0</token>
@@ -25432,20 +25419,20 @@ end)
       </Properties>
     </Item>
   </Item>
-  <Item class="SoundService" referent="107">
+  <Item class="SoundService" referent="108">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
   </Item>
-  <Item class="StarterPlayer" referent="108">
+  <Item class="StarterPlayer" referent="109">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="109">
+    <Item class="StarterPlayerScripts" referent="110">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="110">
+      <Item class="LocalScript" referent="111">
         <Properties>
           <string name="Name">PS5Client</string>
           <string name="Source"><![CDATA[-- Запуск: интерфейс PS5 создаётся выключенным, игрок гуляет по чиллзоне
@@ -25458,6 +25445,8 @@ local ChillZone = require(PS5:WaitForChild("ChillZone"))
 
 local Profiles = require(PS5:WaitForChild("Profiles"))
 
+require(PS5:WaitForChild("NoGlow")).Start()
+
 UI.Init()
 task.spawn(ChillZone.Start, UI)
 Profiles.Start(UI, ChillZone)
@@ -25466,12 +25455,12 @@ Profiles.Start(UI, ChillZone)
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="111">
+  <Item class="Workspace" referent="112">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
     </Properties>
-    <Item class="Terrain" referent="112">
+    <Item class="Terrain" referent="113">
       <Properties>
         <string name="Name">Terrain</string>
         <bool name="Decoration">false</bool>

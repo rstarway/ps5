@@ -144,9 +144,10 @@ local function buildScenery(data)
 		p.Size = size
 		p.CFrame = cf
 		p.Color = color3(style.color)
-		p.Material = M[style.material]
+		-- неон в проекте не используем: старые стили из Blender становятся пластиком
+		p.Material = style.material == "Neon" and M.SmoothPlastic or M[style.material]
 		p.Transparency = style.transparency
-		p.CastShadow = style.material ~= "Neon" and style.material ~= "Glass" and size.Magnitude > 1.2
+		p.CastShadow = style.material ~= "Glass" and size.Magnitude > 1.2
 		p.TopSurface = Enum.SurfaceType.Smooth
 		p.BottomSurface = Enum.SurfaceType.Smooth
 		if (row[19] or 1) > 1 then
@@ -473,7 +474,7 @@ for _, plr in Players:GetPlayers() do
 	task.spawn(onPlayerAdded, plr)
 end
 
--- Вечернее освещение и постобработка
+-- Вечернее освещение
 Lighting.ClockTime = 19.3
 Lighting.Brightness = 1.6
 Lighting.Ambient = rgb(55, 50, 75)
@@ -490,16 +491,9 @@ if not Lighting:FindFirstChildOfClass("Atmosphere") then
 	atmosphere.Haze = 1.5
 	atmosphere.Parent = Lighting
 end
-local function effect(className, props)
-	if Lighting:FindFirstChildOfClass(className) then
-		return
+-- Без Bloom/SunRays/цветокоррекции: со свечением мир и игры пересвечивались
+for _, e in Lighting:GetChildren() do
+	if e:IsA("BloomEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") then
+		e:Destroy()
 	end
-	local e = Instance.new(className)
-	for k, v in props do
-		e[k] = v
-	end
-	e.Parent = Lighting
 end
-effect("BloomEffect", { Intensity = 0.9, Size = 28, Threshold = 1.6 })
-effect("ColorCorrectionEffect", { Brightness = 0.02, Contrast = 0.12, Saturation = 0.12, TintColor = rgb(255, 244, 236) })
-effect("SunRaysEffect", { Intensity = 0.05, Spread = 0.6 })

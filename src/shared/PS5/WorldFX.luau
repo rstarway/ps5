@@ -103,7 +103,7 @@ local function fireflies(zone, folder)
 		fly.Name = "Firefly"
 		fly.Shape = Enum.PartType.Ball
 		fly.Size = Vector3.one * 0.28
-		fly.Material = Enum.Material.Neon
+		fly.Material = Enum.Material.SmoothPlastic
 		fly.Color = Color3.fromRGB(210, 255, 120)
 		fly.Anchored = true
 		fly.CanCollide = false

@@ -106,7 +106,7 @@ function Game.launch(ctx)
 			Size = Vector3.one * (0.4 + r * 0.8),
 			Position = ORIGIN + Vector3.new(math.random(-160, 160), -math.random(15, 70), math.random(-160, 160)),
 			Color = i % 3 == 0 and hex("#7B6CF6") or ACCENT,
-			Material = Enum.Material.Neon,
+			Material = Enum.Material.SmoothPlastic,
 			Transparency = 0.3,
 		})
 	end
@@ -116,7 +116,7 @@ function Game.launch(ctx)
 	board.Parent = ctx.world
 
 	local cube = part({ Name = "Cube", Size = Vector3.new(TILE, TILE, TILE), Color = hex("#E9F2FF"), Material = Enum.Material.SmoothPlastic })
-	local markPart = part({ Name = "Mark", Size = Vector3.new(TILE * 0.72, 0.12, TILE * 0.72), Color = ACCENT, Material = Enum.Material.Neon })
+	local markPart = part({ Name = "Mark", Size = Vector3.new(TILE * 0.72, 0.12, TILE * 0.72), Color = ACCENT, Material = Enum.Material.SmoothPlastic })
 	local light = Instance.new("PointLight")
 	light.Color = ACCENT
 	light.Range = 14
@@ -343,17 +343,17 @@ function Game.launch(ctx)
 						local len = o[1] == 0 and TILE - 0.2 or 0.35
 						local dep = o[1] == 0 and 0.35 or TILE - 0.2
 						part({
-							Name = "ExitGlow", Size = Vector3.new(len, 0.2, dep), Material = Enum.Material.Neon, Color = ACCENT,
+							Name = "ExitGlow", Size = Vector3.new(len, 0.2, dep), Material = Enum.Material.SmoothPlastic, Color = ACCENT,
 							Position = base + Vector3.new(o[1] * (TILE / 2 - 0.27), 0.05, o[2] * (TILE / 2 - 0.27)), Parent = board,
 						})
 					end
-					local beam = part({ Name = "ExitBeam", Size = Vector3.new(TILE * 0.5, 0.1, TILE * 0.5), Material = Enum.Material.Neon, Color = ACCENT, Transparency = 0.4, Position = base + Vector3.new(0, 0.02, 0), Parent = board })
+					local beam = part({ Name = "ExitBeam", Size = Vector3.new(TILE * 0.5, 0.1, TILE * 0.5), Material = Enum.Material.SmoothPlastic, Color = ACCENT, Transparency = 0.4, Position = base + Vector3.new(0, 0.02, 0), Parent = board })
 					local l = Instance.new("PointLight")
 					l.Color = ACCENT
 					l.Range = 12
 					l.Parent = beam
 				elseif c == "T" then
-					part({ Name = "Button", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, TILE * 0.55, TILE * 0.55), CFrame = CFrame.new(base + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = hex("#FFD166"), Material = Enum.Material.Neon, Parent = board })
+					part({ Name = "Button", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, TILE * 0.55, TILE * 0.55), CFrame = CFrame.new(base + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = hex("#FFD166"), Material = Enum.Material.SmoothPlastic, Parent = board })
 				elseif c == "C" then
 					p.Name = "Crumble"
 				end

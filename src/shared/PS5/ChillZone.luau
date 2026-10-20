@@ -198,7 +198,7 @@ local function trophyModel(spot, trophy, manifest)
 	local up = CFrame.Angles(0, 0, math.rad(90))
 	piece(Enum.PartType.Block, Vector3.new(1.2, 0.35, 1.2), CFrame.new(0, 0.2, 0), Color3.fromRGB(30, 30, 34), Enum.Material.Marble)
 	piece(Enum.PartType.Cylinder, Vector3.new(0.9, 0.3, 0.3), CFrame.new(0, 0.8, 0) * up, color, Enum.Material.Metal)
-	piece(Enum.PartType.Cylinder, Vector3.new(1, 1, 1), CFrame.new(0, 1.65, 0) * up, color, trophy.grade == "platinum" and Enum.Material.Neon or Enum.Material.Metal)
+	piece(Enum.PartType.Cylinder, Vector3.new(1, 1, 1), CFrame.new(0, 1.65, 0) * up, color, Enum.Material.Metal)
 	if unlocked and (trophy.grade == "gold" or trophy.grade == "platinum") then
 		local l = Instance.new("PointLight")
 		l.Color = color

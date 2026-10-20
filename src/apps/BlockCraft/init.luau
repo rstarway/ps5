@@ -878,7 +878,7 @@ function BlockCraft.launch(ctx)
 		local flash = Instance.new("Part")
 		flash.Anchored, flash.CanCollide, flash.CanQuery = true, false, false
 		flash.Shape = Enum.PartType.Ball
-		flash.Material = Enum.Material.Neon
+		flash.Material = Enum.Material.SmoothPlastic
 		flash.Color = rgb(255, 240, 200)
 		flash.Size = Vector3.one * B * 2
 		flash.Position = world:toWorld(center)

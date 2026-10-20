@@ -20,10 +20,6 @@ local CRIMSON = Color3.fromRGB(205, 24, 48)
 local NAVY = Color3.fromRGB(18, 28, 70)
 local WHITE = Color3.new(1, 1, 1)
 local AMBER = Color3.fromRGB(255, 190, 40)
-local NEONS = {
-	Color3.fromRGB(0, 230, 255), Color3.fromRGB(255, 60, 160), Color3.fromRGB(255, 180, 40),
-	Color3.fromRGB(140, 90, 255), Color3.fromRGB(60, 255, 150),
-}
 local CONCRETE = {
 	Color3.fromRGB(38, 42, 58), Color3.fromRGB(52, 50, 64), Color3.fromRGB(30, 36, 48),
 	Color3.fromRGB(60, 58, 70), Color3.fromRGB(44, 48, 70),
@@ -100,19 +96,19 @@ local function buildCity(world)
 				local d = isTower and 56 or 48 + rnd() * 30
 				local h = isTower and 380 or math.floor(60 + rnd() ^ 1.4 * 210)
 				local color = CONCRETE[1 + math.floor(rnd() * #CONCRETE)]
-				local neon = NEONS[1 + math.floor(rnd() * #NEONS)]
 				local center = c + Vector3.new(0, h / 2, 0)
 				part(city, Vector3.new(w, h, d), CFrame.new(center), color, isTower and Enum.Material.Glass or Enum.Material.Concrete, 0)
-				-- неоновые пояса окон: одна деталь-кольцо на этаж
+				-- пояса окон: одна деталь-кольцо на этаж, часть горит тёплым светом
 				local step = isTower and 16 or 22
 				for y = step, h - 6, step do
-					part(city, Vector3.new(w + 0.6, 1, d + 0.6), CFrame.new(c + Vector3.new(0, y, 0)), neon, Enum.Material.Neon, 0.25)
+					local lit = rnd() < 0.55
+					part(city, Vector3.new(w + 0.6, 1, d + 0.6), CFrame.new(c + Vector3.new(0, y, 0)), lit and Color3.fromRGB(235, 200, 130) or Color3.fromRGB(40, 46, 60), Enum.Material.Glass, 0)
 				end
 				part(city, Vector3.new(w + 1, 1.6, d + 1), CFrame.new(c + Vector3.new(0, h + 0.8, 0)), Color3.fromRGB(80, 80, 92), Enum.Material.Concrete)
 				local roof = c + Vector3.new(0, h, 0)
 				if isTower then
 					part(city, Vector3.new(3, 60, 3), CFrame.new(roof + Vector3.new(0, 30, 0)), Color3.fromRGB(90, 90, 100), Enum.Material.Metal)
-					local tip = part(city, Vector3.new(4, 4, 4), CFrame.new(roof + Vector3.new(0, 62, 0)), CRIMSON, Enum.Material.Neon, 0, Enum.PartType.Ball)
+					local tip = part(city, Vector3.new(4, 4, 4), CFrame.new(roof + Vector3.new(0, 62, 0)), CRIMSON, Enum.Material.Glass, 0, Enum.PartType.Ball)
 					local light = Instance.new("PointLight")
 					light.Color = CRIMSON
 					light.Range = 60
@@ -125,7 +121,7 @@ local function buildCity(world)
 				elseif rnd() < 0.5 then
 					local p = roof + Vector3.new((rnd() - 0.5) * (w - 10), 0, (rnd() - 0.5) * (d - 10))
 					part(city, Vector3.new(0.6, 18, 0.6), CFrame.new(p + Vector3.new(0, 9, 0)), Color3.fromRGB(120, 120, 130), Enum.Material.Metal)
-					part(city, Vector3.new(1.2, 1.2, 1.2), CFrame.new(p + Vector3.new(0, 18.5, 0)), Color3.fromRGB(255, 40, 40), Enum.Material.Neon, 0, Enum.PartType.Ball)
+					part(city, Vector3.new(1.2, 1.2, 1.2), CFrame.new(p + Vector3.new(0, 18.5, 0)), Color3.fromRGB(255, 40, 40), Enum.Material.Glass, 0, Enum.PartType.Ball)
 				end
 				local b = {
 					min = c - Vector3.new(w / 2, 0, d / 2),
@@ -150,7 +146,7 @@ local function buildCity(world)
 			if (i + j) % 2 == 0 then
 				local lp = p + Vector3.new(14, 0, 14)
 				part(city, Vector3.new(0.8, 16, 0.8), CFrame.new(lp + Vector3.new(0, 8, 0)), Color3.fromRGB(40, 40, 48), Enum.Material.Metal)
-				local bulb = part(city, Vector3.new(2, 1, 2), CFrame.new(lp + Vector3.new(0, 16.5, 0)), Color3.fromRGB(255, 220, 160), Enum.Material.Neon)
+				local bulb = part(city, Vector3.new(2, 1, 2), CFrame.new(lp + Vector3.new(0, 16.5, 0)), Color3.fromRGB(255, 220, 160), Enum.Material.Glass)
 				local light = Instance.new("PointLight")
 				light.Color = Color3.fromRGB(255, 210, 150)
 				light.Range = 45
@@ -198,13 +194,13 @@ local HERO = {
 	{ name = "Emblem", size = Vector3.new(0.9, 0.9, 0.1), at = Vector3.new(0, 3.5, -0.52), color = Color3.fromRGB(10, 10, 14) },
 	{ name = "Belt", size = Vector3.new(2.05, 0.35, 1.05), at = Vector3.new(0, 2.2, 0), color = NAVY },
 	{ name = "Head", size = Vector3.new(1.3, 1.4, 1.2), at = Vector3.new(0, 5, 0), color = CRIMSON },
-	{ name = "EyeL", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(-0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.Neon },
-	{ name = "EyeR", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.Neon },
+	{ name = "EyeL", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(-0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.SmoothPlastic },
+	{ name = "EyeR", size = Vector3.new(0.45, 0.3, 0.1), at = Vector3.new(0.32, 5.15, -0.61), color = WHITE, material = Enum.Material.SmoothPlastic },
 	{ name = "ArmL", size = Vector3.new(0.65, 2.1, 0.65), at = Vector3.new(-1.35, 4.2, 0), color = CRIMSON, limb = "b" },
 	{ name = "ArmR", size = Vector3.new(0.65, 2.1, 0.65), at = Vector3.new(1.35, 4.2, 0), color = CRIMSON, limb = "up" },
 	{ name = "LegL", size = Vector3.new(0.85, 2.1, 0.85), at = Vector3.new(-0.5, 2.1, 0), color = NAVY, limb = "a" },
 	{ name = "LegR", size = Vector3.new(0.85, 2.1, 0.85), at = Vector3.new(0.5, 2.1, 0), color = NAVY, limb = "b" },
-	{ name = "Sense", size = Vector3.new(0.6, 0.6, 0.6), at = Vector3.new(0, 6.6, 0), color = AMBER, material = Enum.Material.Neon, transparency = 1, shape = Enum.PartType.Ball },
+	{ name = "Sense", size = Vector3.new(0.6, 0.6, 0.6), at = Vector3.new(0, 6.6, 0), color = AMBER, material = Enum.Material.SmoothPlastic, transparency = 1, shape = Enum.PartType.Ball },
 }
 
 local THUG = {
@@ -254,7 +250,7 @@ function Game.launch(ctx)
 			local got = tokenStr:sub(k, k) == "1"
 			local p
 			if not got then
-				p = part(ctx.world, Vector3.new(0.6, 4, 4), CFrame.new(pos), AMBER, Enum.Material.Neon, 0, Enum.PartType.Cylinder)
+				p = part(ctx.world, Vector3.new(0.6, 4, 4), CFrame.new(pos), AMBER, Enum.Material.Metal, 0, Enum.PartType.Cylinder)
 				local light = Instance.new("PointLight")
 				light.Color = AMBER
 				light.Range = 18
@@ -276,7 +272,7 @@ function Game.launch(ctx)
 
 	-- Герой
 	local fig = buildFigure(ctx.world, HERO)
-	local rope = part(ctx.world, Vector3.new(0.18, 0.18, 1), CFrame.new(BASE), Color3.fromRGB(240, 240, 250), Enum.Material.Neon, 1)
+	local rope = part(ctx.world, Vector3.new(0.18, 0.18, 1), CFrame.new(BASE), Color3.fromRGB(240, 240, 250), Enum.Material.SmoothPlastic, 1)
 	local START = Vector3.new(tower.max.X + 20, GY, tower.max.Z + 20)
 	local hero = {
 		pos = START,
@@ -482,7 +478,7 @@ function Game.launch(ctx)
 		return t
 	end
 
-	local beacon = part(ctx.world, Vector3.new(500, 10, 10), CFrame.new(BASE), CRIMSON, Enum.Material.Neon, 1, Enum.PartType.Cylinder)
+	local beacon = part(ctx.world, Vector3.new(500, 10, 10), CFrame.new(BASE), CRIMSON, Enum.Material.SmoothPlastic, 1, Enum.PartType.Cylinder)
 	local function startCrime()
 		local options = {}
 		for _, p in crossings do

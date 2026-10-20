@@ -1,9 +1,8 @@
--- 3D-сцена для заставки: консоль на подиуме в тёмной комнате с неоном.
+-- 3D-сцена для заставки: консоль на подиуме в тёмной студии под одним прожектором.
 -- Если в ReplicatedStorage.PS5Assets лежит модель "Console" (импорт FBX из Blender),
 -- используется она, иначе консоль собирается из деталей.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 
 local Embedded = require(script.Parent.Embedded)
@@ -47,7 +46,6 @@ local function buildConsole()
 			Name = "LightStrip",
 			Size = Vector3.new(0.08, 9.6, 7.2),
 			Color = blue,
-			Material = Enum.Material.Neon,
 			CFrame = CFrame.new(side * 1.18, 5.9, 0) * CFrame.Angles(0, 0, math.rad(-side * 3)),
 		})
 	end
@@ -69,15 +67,6 @@ function World.Build()
 
 	part({ Name = "Floor", Size = Vector3.new(200, 1, 200), Position = Vector3.new(0, 0, 0), Color = Color3.fromRGB(8, 10, 18), Reflectance = 0.35, Material = Enum.Material.Glass })
 	part({ Name = "Wall", Size = Vector3.new(200, 80, 1), Position = Vector3.new(0, 40, -30), Color = Color3.fromRGB(6, 8, 16) })
-	for i = -3, 3 do
-		part({
-			Name = "Neon",
-			Size = Vector3.new(0.3, 60, 0.3),
-			Position = Vector3.new(i * 14, 30, -29),
-			Color = i % 2 == 0 and Color3.fromRGB(0, 90, 255) or Color3.fromRGB(120, 40, 255),
-			Material = Enum.Material.Neon,
-		})
-	end
 	local spot = part({ Name = "Spot", Size = Vector3.one, Transparency = 1, Position = Vector3.new(0, 30, 10) })
 	local light = Instance.new("SpotLight")
 	light.Angle = 40
@@ -93,8 +82,8 @@ function World.Build()
 				p.Anchored = true
 				p.CanCollide = false
 				if string.find(p.Name, "Light") then
-					p.Color = Color3.fromRGB(0, 120, 255)
-					p.Material = Enum.Material.Neon
+					p.Color = Color3.fromRGB(70, 130, 220)
+					p.Material = Enum.Material.SmoothPlastic
 				elseif string.find(p.Name, "White") then
 					p.Color = Color3.fromRGB(238, 240, 245)
 					p.Material = Enum.Material.SmoothPlastic
@@ -142,21 +131,6 @@ function World.Build()
 	scene.WorldPivot = CFrame.new()
 	scene:PivotTo(CFrame.new(ORIGIN))
 	consoleCenter += ORIGIN
-
-	if not Lighting:FindFirstChild("PS5Bloom") then
-		local bloom = Instance.new("BloomEffect")
-		bloom.Name = "PS5Bloom"
-		bloom.Intensity = 0.8
-		bloom.Size = 30
-		bloom.Threshold = 0.9
-		bloom.Parent = Lighting
-		local cc = Instance.new("ColorCorrectionEffect")
-		cc.Name = "PS5Color"
-		cc.Contrast = 0.1
-		cc.Saturation = 0.1
-		cc.TintColor = Color3.fromRGB(220, 230, 255)
-		cc.Parent = Lighting
-	end
 	return scene
 end
 

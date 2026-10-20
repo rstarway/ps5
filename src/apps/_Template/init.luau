@@ -9,7 +9,7 @@ function Template.launch(ctx)
 	cube.Anchored = true
 	cube.Size = Vector3.new(4, 4, 4)
 	cube.Color = Color3.fromRGB(58, 134, 255)
-	cube.Material = Enum.Material.Neon
+	cube.Material = Enum.Material.SmoothPlastic
 	cube.Position = Vector3.new(0, 105, 0)
 	cube.Parent = ctx.world
 	ctx.camera.CameraType = Enum.CameraType.Scriptable

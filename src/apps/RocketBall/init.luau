@@ -86,7 +86,7 @@ function Game.launch(ctx)
 	-- Разметка
 	local LINE = Color3.fromRGB(235, 245, 255)
 	local function line(x, z, sx, sz)
-		part({ Name = "Line", Size = Vector3.new(sx, 0.1, sz), CFrame = at(x, 0.02, z), Material = Enum.Material.Neon, Color = LINE, Transparency = 0.25, Parent = arena })
+		part({ Name = "Line", Size = Vector3.new(sx, 0.1, sz), CFrame = at(x, 0.02, z), Material = Enum.Material.SmoothPlastic, Color = LINE, Transparency = 0.25, Parent = arena })
 	end
 	line(0, 0, FIELD_X * 2, 0.6)
 	line(-FIELD_X + 0.6, 0, 0.6, FIELD_Z * 2)
@@ -102,7 +102,7 @@ function Game.launch(ctx)
 		part({
 			Name = "Circle", Size = Vector3.new(0.6, 0.1, 2.9),
 			CFrame = at(math.cos(a) * 14, 0.02, math.sin(a) * 14) * CFrame.Angles(0, -a, 0),
-			Material = Enum.Material.Neon, Color = LINE, Transparency = 0.25, Parent = arena,
+			Material = Enum.Material.SmoothPlastic, Color = LINE, Transparency = 0.25, Parent = arena,
 		})
 	end
 
@@ -112,7 +112,7 @@ function Game.launch(ctx)
 		part({ Name = "Wall", Size = Vector3.new(sx, sy, sz), CFrame = at(x, y, z), Material = Enum.Material.Glass, Color = GLASS, Transparency = 0.82, Parent = arena })
 	end
 	local function rail(x, y, z, sx, sz, color)
-		part({ Name = "Rail", Size = Vector3.new(sx, 0.6, sz), CFrame = at(x, y, z), Material = Enum.Material.Neon, Color = color, Parent = arena })
+		part({ Name = "Rail", Size = Vector3.new(sx, 0.6, sz), CFrame = at(x, y, z), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 	end
 	for _, s in { -1, 1 } do
 		wall(s * (FIELD_X + 0.5), CEILING / 2, 0, 1, CEILING, FIELD_Z * 2)
@@ -131,14 +131,14 @@ function Game.launch(ctx)
 		local zFront, zBack = s * FIELD_Z, s * (FIELD_Z + GOAL_D)
 		local zMid = (zFront + zBack) / 2
 		for _, px in { -GOAL_W, GOAL_W } do
-			part({ Name = "Post", Size = Vector3.new(1, GOAL_H, 1), CFrame = at(px, GOAL_H / 2, zFront), Material = Enum.Material.Neon, Color = color, Parent = arena })
+			part({ Name = "Post", Size = Vector3.new(1, GOAL_H, 1), CFrame = at(px, GOAL_H / 2, zFront), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 			part({ Name = "Net", Size = Vector3.new(0.4, GOAL_H, GOAL_D), CFrame = at(px, GOAL_H / 2, zMid), Material = Enum.Material.ForceField, Color = color, Parent = arena })
 		end
-		part({ Name = "Crossbar", Size = Vector3.new(GOAL_W * 2 + 1, 1, 1), CFrame = at(0, GOAL_H, zFront), Material = Enum.Material.Neon, Color = color, Parent = arena })
+		part({ Name = "Crossbar", Size = Vector3.new(GOAL_W * 2 + 1, 1, 1), CFrame = at(0, GOAL_H, zFront), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 		part({ Name = "Net", Size = Vector3.new(GOAL_W * 2, GOAL_H, 0.4), CFrame = at(0, GOAL_H / 2, zBack), Material = Enum.Material.ForceField, Color = color, Parent = arena })
 		part({ Name = "Net", Size = Vector3.new(GOAL_W * 2, 0.4, GOAL_D), CFrame = at(0, GOAL_H, zMid), Material = Enum.Material.ForceField, Color = color, Parent = arena })
 		part({ Name = "GoalFloor", Size = Vector3.new(GOAL_W * 2, 1, GOAL_D), CFrame = at(0, -0.5, zMid), Color = color:Lerp(Color3.new(0, 0, 0), 0.6), Parent = arena })
-		local glow = part({ Name = "GoalGlow", Size = Vector3.new(GOAL_W * 2, 0.1, 1.2), CFrame = at(0, 0.03, zFront), Material = Enum.Material.Neon, Color = color, Parent = arena })
+		local glow = part({ Name = "GoalGlow", Size = Vector3.new(GOAL_W * 2, 0.1, 1.2), CFrame = at(0, 0.03, zFront), Material = Enum.Material.SmoothPlastic, Color = color, Parent = arena })
 		glow.Transparency = 0.1
 	end
 
@@ -159,7 +159,7 @@ function Game.launch(ctx)
 		for _, z in { -FIELD_Z - 6, FIELD_Z + 6 } do
 			local x = s * (FIELD_X + 40)
 			part({ Name = "Mast", Size = Vector3.new(1.5, 60, 1.5), CFrame = at(x, 30, z), Color = Color3.fromRGB(60, 66, 90), Parent = arena })
-			local lamp = part({ Name = "Lamp", Size = Vector3.new(10, 5, 1), CFrame = CFrame.lookAt(vec(x, 60, z), vec(0, 0, 0)), Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 250, 230), Parent = arena })
+			local lamp = part({ Name = "Lamp", Size = Vector3.new(10, 5, 1), CFrame = CFrame.lookAt(vec(x, 60, z), vec(0, 0, 0)), Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(255, 250, 230), Parent = arena })
 			local spot = Instance.new("SpotLight")
 			spot.Range = 60
 			spot.Angle = 70
@@ -187,13 +187,13 @@ function Game.launch(ctx)
 			Shape = Enum.PartType.Cylinder,
 			Size = Vector3.new(0.3, big and 6 or 3.4, big and 6 or 3.4),
 			CFrame = at(x, 0.1, z) * CFrame.Angles(0, 0, math.pi / 2),
-			Material = Enum.Material.Neon,
+			Material = Enum.Material.SmoothPlastic,
 			Color = Color3.fromRGB(255, 196, 40),
 			Parent = arena,
 		})
 		local orb
 		if big then
-			orb = part({ Name = "BoostOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), CFrame = at(x, 2.5, z), Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 160, 20), Parent = arena })
+			orb = part({ Name = "BoostOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), CFrame = at(x, 2.5, z), Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(255, 160, 20), Parent = arena })
 		end
 		table.insert(pads, { x = x, z = z, big = big, timer = 0, part = p, orb = orb })
 	end
@@ -216,7 +216,7 @@ function Game.launch(ctx)
 	})
 	local ballRing = part({
 		Name = "BallRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, BALL_R * 2 + 0.1, BALL_R * 2 + 0.1), -- светящийся пояс вокруг мяча
-		Material = Enum.Material.Neon, Color = Color3.fromRGB(0, 220, 255),
+		Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(0, 220, 255),
 	})
 	local ballLight = Instance.new("PointLight")
 	ballLight.Range = 14
@@ -241,19 +241,19 @@ function Game.launch(ctx)
 		piece("Body", Vector3.new(5, 1.5, 8.4), CFrame.new(0, 1.45, 0), {})
 		piece("Nose", Vector3.new(4.6, 0.8, 2), CFrame.new(0, 1.0, -4.6), { Color = dark })
 		piece("Cabin", Vector3.new(4, 1.3, 3.8), CFrame.new(0, 2.85, 0.9), { Color = Color3.fromRGB(20, 26, 40), Material = Enum.Material.Glass })
-		piece("Stripe", Vector3.new(1, 0.1, 8.5), CFrame.new(0, 2.22, 0), { Color = Color3.new(1, 1, 1), Material = Enum.Material.Neon })
+		piece("Stripe", Vector3.new(1, 0.1, 8.5), CFrame.new(0, 2.22, 0), { Color = Color3.new(1, 1, 1), Material = Enum.Material.SmoothPlastic })
 		piece("Spoiler", Vector3.new(5.2, 0.3, 1.3), CFrame.new(0, 3.1, 3.7), { Color = dark })
 		piece("SpoilerPost", Vector3.new(0.3, 0.9, 0.5), CFrame.new(-1.8, 2.5, 3.7), { Color = dark })
 		piece("SpoilerPost", Vector3.new(0.3, 0.9, 0.5), CFrame.new(1.8, 2.5, 3.7), { Color = dark })
 		for _, hx in { -1.6, 1.6 } do
-			piece("Headlight", Vector3.new(0.9, 0.4, 0.2), CFrame.new(hx, 1.6, -4.25), { Color = Color3.fromRGB(255, 250, 220), Material = Enum.Material.Neon })
+			piece("Headlight", Vector3.new(0.9, 0.4, 0.2), CFrame.new(hx, 1.6, -4.25), { Color = Color3.fromRGB(255, 250, 220), Material = Enum.Material.SmoothPlastic })
 		end
 		for _, wx in { -2.6, 2.6 } do
 			for _, wz in { -2.9, 2.9 } do
 				piece("Wheel", Vector3.new(1.1, 2.2, 2.2), CFrame.new(wx, 1.1, wz), { Color = Color3.fromRGB(18, 18, 22), Shape = Enum.PartType.Cylinder })
 			end
 		end
-		car.flame = piece("Flame", Vector3.new(1.8, 1, 2.6), CFrame.new(0, 1.5, 5.6), { Color = Color3.fromRGB(255, 120, 30), Material = Enum.Material.Neon })
+		car.flame = piece("Flame", Vector3.new(1.8, 1, 2.6), CFrame.new(0, 1.5, 5.6), { Color = Color3.fromRGB(255, 120, 30), Material = Enum.Material.SmoothPlastic })
 		local flameLight = Instance.new("PointLight")
 		flameLight.Range = 10
 		flameLight.Brightness = 2
@@ -493,10 +493,10 @@ function Game.launch(ctx)
 
 	---------------------------------------------------------------- эффекты
 	local function goalBurst(z, color)
-		local burst = part({ Name = "GoalBurst", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.Neon, Color = color })
+		local burst = part({ Name = "GoalBurst", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.SmoothPlastic, Color = color })
 		table.insert(effects, { part = burst, t = 0, life = 1.2, grow = 70 })
 		for _ = 1, 24 do
-			local bit = part({ Name = "Confetti", Size = Vector3.new(0.8, 0.8, 0.8), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.Neon, Color = CROWD[math.random(#CROWD)] })
+			local bit = part({ Name = "Confetti", Size = Vector3.new(0.8, 0.8, 0.8), CFrame = at(0, GOAL_H / 2, z), Material = Enum.Material.SmoothPlastic, Color = CROWD[math.random(#CROWD)] })
 			table.insert(effects, {
 				part = bit, t = 0, life = 2,
 				x = 0, y = GOAL_H / 2, z = z,

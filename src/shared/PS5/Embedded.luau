@@ -96,7 +96,7 @@ end
 local KIND = {
 	White = { color = Color3.fromRGB(238, 240, 245), material = Enum.Material.SmoothPlastic },
 	Black = { color = Color3.fromRGB(16, 16, 20), material = Enum.Material.SmoothPlastic },
-	Light = { color = Color3.fromRGB(0, 120, 255), material = Enum.Material.Neon },
+	Light = { color = Color3.fromRGB(70, 130, 220), material = Enum.Material.SmoothPlastic },
 }
 
 local function meshPartFrom(mesh)
@@ -149,9 +149,10 @@ local function buildModel(module, yieldEvery)
 			meshPart.CanTouch = false
 			if part.color then
 				meshPart.Color = Color3.fromRGB(part.color[1], part.color[2], part.color[3])
-				meshPart.Material = Enum.Material[part.material]
+				-- неон в проекте не используем: старые выгрузки из Blender становятся пластиком
+				meshPart.Material = part.material == "Neon" and Enum.Material.SmoothPlastic or Enum.Material[part.material]
 				meshPart.Transparency = part.transparency or 0
-				meshPart.CastShadow = part.material ~= "Neon" and part.material ~= "Glass"
+				meshPart.CastShadow = part.material ~= "Glass"
 			else
 				local style = KIND[part.kind] or KIND.Black
 				meshPart.Color = style.color

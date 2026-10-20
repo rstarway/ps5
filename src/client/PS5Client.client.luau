@@ -8,6 +8,8 @@ local ChillZone = require(PS5:WaitForChild("ChillZone"))
 
 local Profiles = require(PS5:WaitForChild("Profiles"))
 
+require(PS5:WaitForChild("NoGlow")).Start()
+
 UI.Init()
 task.spawn(ChillZone.Start, UI)
 Profiles.Start(UI, ChillZone)

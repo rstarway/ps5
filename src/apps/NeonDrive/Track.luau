@@ -1,4 +1,4 @@
--- Трасса Neon Drive: замкнутый сплайн, дорога с неоновыми бортами и ночной город вокруг.
+-- Трасса Neon Drive: замкнутый сплайн, дорога с бетонными отбойниками и ночной город вокруг.
 -- Вся математика на Vector3 и числах (без методов CFrame), чтобы работала и в имитации tools/mock.
 local Track = {}
 Track.__index = Track
@@ -19,7 +19,6 @@ local VIOLET = Color3.fromRGB(123, 44, 255)
 local CYAN = Color3.fromRGB(0, 229, 255)
 local AMBER = Color3.fromRGB(255, 176, 46)
 Track.Colors = { pink = PINK, violet = VIOLET, cyan = CYAN, amber = AMBER }
-local NEONS = { PINK, VIOLET, CYAN, AMBER, PINK, CYAN }
 
 local function catmull(p0, p1, p2, p3, t)
 	local t2, t3 = t * t, t * t * t
@@ -167,19 +166,20 @@ function Track:build(parent, checkpoints, padSpots)
 		beam(road, a - Vector3.new(0, 0.5, 0), b - Vector3.new(0, 0.5, 0), Track.WIDTH, 1, asphalt, Enum.Material.Asphalt)
 		local disc = part(road, Vector3.new(1, Track.WIDTH, Track.WIDTH), CFrame.new(a - Vector3.new(0, 0.55, 0)) * CFrame.Angles(0, 0, math.pi / 2), asphalt, Enum.Material.Asphalt)
 		disc.Shape = Enum.PartType.Cylinder
-		-- неоновые борта по краям, цвет меняется полосами
-		local color = (math.floor(i / 3) % 2 == 0) and PINK or VIOLET
+		-- бетонные отбойники по краям, сверху полоса: через сегмент красная и белая
+		local stripe = (math.floor(i / 3) % 2 == 0) and Color3.fromRGB(200, 40, 40) or Color3.fromRGB(235, 235, 235)
 		local ra, rb = R[i], R[i % N + 1]
 		for _, side in { -1, 1 } do
 			local ea = a + ra * (side * (HALF + 0.6)) + Vector3.new(0, 1.1, 0)
 			local eb = b + rb * (side * (HALF + 0.6)) + Vector3.new(0, 1.1, 0)
-			beam(road, ea, eb, 0.7, 2.2, color, Enum.Material.Neon, 0.15)
+			beam(road, ea, eb, 0.7, 2.2, Color3.fromRGB(150, 148, 145), Enum.Material.Concrete)
+			beam(road, ea + Vector3.new(0, 1.2, 0), eb + Vector3.new(0, 1.2, 0), 0.75, 0.3, stripe, Enum.Material.SmoothPlastic)
 		end
 		-- разметка по центру
 		if i % 2 == 0 then
 			local m = (a + b) / 2 + Vector3.new(0, 0.03, 0)
 			local dir = (b - a).Unit
-			beam(road, m - dir * 4, m + dir * 4, 0.6, 0.06, Color3.fromRGB(200, 170, 255), Enum.Material.Neon, 0.35)
+			beam(road, m - dir * 4, m + dir * 4, 0.6, 0.06, Color3.fromRGB(225, 220, 200), Enum.Material.SmoothPlastic, 0.2)
 		end
 		-- опоры под эстакадой
 		if a.Y - groundY > 4 and i % 3 == 0 then
@@ -189,12 +189,12 @@ function Track:build(parent, checkpoints, padSpots)
 				part(road, Vector3.new(3, h, 3), CFrame.new(top.X, groundY + h / 2, top.Z), Color3.fromRGB(30, 26, 46), Enum.Material.Concrete)
 			end
 		end
-		-- фонари: столб, неоновая лампа и свет
+		-- фонари: столб, плафон и тёплый свет
 		if i % 9 == 0 then
 			local side = (i % 18 == 0) and 1 or -1
 			local foot = a + ra * (side * (HALF + 3))
 			part(road, Vector3.new(0.8, 16, 0.8), CFrame.new(foot + Vector3.new(0, 8, 0)), Color3.fromRGB(40, 36, 60), Enum.Material.Metal)
-			local head = beam(road, foot + Vector3.new(0, 16, 0), foot - ra * (side * 6) + Vector3.new(0, 16, 0), 1.2, 0.5, i % 27 == 0 and CYAN or PINK, Enum.Material.Neon)
+			local head = beam(road, foot + Vector3.new(0, 16, 0), foot - ra * (side * 6) + Vector3.new(0, 16, 0), 1.2, 0.5, Color3.fromRGB(255, 226, 170), Enum.Material.Glass)
 			if head then
 				local light = Instance.new("PointLight")
 				light.Color = head.Color
@@ -214,15 +214,15 @@ function Track:build(parent, checkpoints, padSpots)
 		local bars = {}
 		for _, side in { -1, 1 } do
 			local foot = a + r * (side * (HALF + 2))
-			table.insert(bars, part(g, Vector3.new(2, 20, 2), CFrame.new(foot + Vector3.new(0, 10, 0)), color, Enum.Material.Neon))
+			table.insert(bars, part(g, Vector3.new(2, 20, 2), CFrame.new(foot + Vector3.new(0, 10, 0)), color, Enum.Material.SmoothPlastic))
 		end
-		table.insert(bars, beam(g, a - r * (HALF + 3) + Vector3.new(0, 20, 0), a + r * (HALF + 3) + Vector3.new(0, 20, 0), 2, isStart and 4 or 1.6, color, Enum.Material.Neon))
+		table.insert(bars, beam(g, a - r * (HALF + 3) + Vector3.new(0, 20, 0), a + r * (HALF + 3) + Vector3.new(0, 20, 0), 2, isStart and 4 or 1.6, color, Enum.Material.SmoothPlastic))
 		if isStart then
 			for row = 0, 1 do
 				for col = 0, 10 do
 					local pos = a + r * (-HALF + 2 + col * 4) + t * (row * 4 - 2) + Vector3.new(0, 0.04, 0)
 					local white = (row + col) % 2 == 0
-					part(g, Vector3.new(4, 0.08, 4), CFrame.lookAt(pos, pos + t), white and Color3.new(0.95, 0.95, 1) or Color3.fromRGB(10, 10, 16), white and Enum.Material.Neon or Enum.Material.SmoothPlastic)
+					part(g, Vector3.new(4, 0.08, 4), CFrame.lookAt(pos, pos + t), white and Color3.new(0.95, 0.95, 1) or Color3.fromRGB(10, 10, 16), Enum.Material.SmoothPlastic)
 				end
 			end
 			local sign = beam(g, a - r * 14 + Vector3.new(0, 25, 0), a + r * 14 + Vector3.new(0, 25, 0), 1, 6, Color3.fromRGB(16, 8, 30), Enum.Material.SmoothPlastic)
@@ -254,16 +254,16 @@ function Track:build(parent, checkpoints, padSpots)
 		end
 	end
 
-	-- ускорители: светящаяся плита со стрелками
+	-- ускорители: голубая плита со стрелками
 	local pads = {}
 	for _, spot in padSpots do
 		local a, r, t = S[spot.index], R[spot.index], self.tangents[spot.index]
 		local center = a + r * spot.offset + Vector3.new(0, 0.05, 0)
-		part(road, Vector3.new(12, 0.1, 16), CFrame.lookAt(center, center + t), Color3.fromRGB(0, 140, 180), Enum.Material.Neon, 0.3)
+		part(road, Vector3.new(12, 0.1, 16), CFrame.lookAt(center, center + t), Color3.fromRGB(30, 120, 170), Enum.Material.SmoothPlastic)
 		for k = 0, 2 do
 			local tip = center + t * (k * 5 - 3) + Vector3.new(0, 0.08, 0)
 			for _, side in { -1, 1 } do
-				beam(road, tip - t * 3 + r * (side * 4), tip, 1, 0.08, CYAN, Enum.Material.Neon)
+				beam(road, tip - t * 3 + r * (side * 4), tip, 1, 0.08, Color3.fromRGB(235, 245, 255), Enum.Material.SmoothPlastic)
 			end
 		end
 		table.insert(pads, { index = spot.index, offset = spot.offset, center = center })
@@ -273,17 +273,8 @@ function Track:build(parent, checkpoints, padSpots)
 	-- город
 	local city = Instance.new("Model")
 	city.Name = "City"
-	local ground = part(city, Vector3.new(maxX - minX + 1400, 1, maxZ - minZ + 1400), CFrame.new((minX + maxX) / 2, groundY - 0.5, (minZ + maxZ) / 2), Color3.fromRGB(8, 6, 18), Enum.Material.SmoothPlastic)
+	local ground = part(city, Vector3.new(maxX - minX + 1400, 1, maxZ - minZ + 1400), CFrame.new((minX + maxX) / 2, groundY - 0.5, (minZ + maxZ) / 2), Color3.fromRGB(38, 40, 44), Enum.Material.Asphalt)
 	ground.Name = "Ground"
-	-- неоновая сетка на земле
-	local cx, cz = (minX + maxX) / 2, (minZ + maxZ) / 2
-	local spanX, spanZ = maxX - minX + 1400, maxZ - minZ + 1400
-	for x = -spanX / 2, spanX / 2, 120 do
-		part(city, Vector3.new(0.4, 0.05, spanZ), CFrame.new(cx + x, groundY + 0.02, cz), VIOLET, Enum.Material.Neon, 0.75)
-	end
-	for z = -spanZ / 2, spanZ / 2, 120 do
-		part(city, Vector3.new(spanX, 0.05, 0.4), CFrame.new(cx, groundY + 0.02, cz + z), VIOLET, Enum.Material.Neon, 0.75)
-	end
 
 	local function building(pos, t, w, d, h, detail)
 		local body = Color3.fromRGB(rng:NextInteger(12, 26), rng:NextInteger(10, 20), rng:NextInteger(28, 48))
@@ -291,29 +282,17 @@ function Track:build(parent, checkpoints, padSpots)
 		local look = center + t
 		part(city, Vector3.new(w, h, d), CFrame.lookAt(center, look), body, Enum.Material.SmoothPlastic)
 		local r = Vector3.new(-t.Z, 0, t.X)
-		local neon = NEONS[rng:NextInteger(1, #NEONS)]
-		-- вертикальные неоновые рёбра по углам
-		for _, sx in { -1, 1 } do
-			for _, sz in { -1, 1 } do
-				if detail or sx == sz then
-					local corner = center + r * (sx * (w / 2 + 0.1)) + t * (sz * (d / 2 + 0.1))
-					part(city, Vector3.new(0.5, h, 0.5), CFrame.new(corner), neon, Enum.Material.Neon, 0.1)
-				end
-			end
-		end
 		if detail then
-			-- полосы окон по периметру
+			-- полосы окон по периметру: часть горит тёплым светом, часть тёмная
 			local bands = math.clamp(math.floor(h / 28), 1, 5)
 			for k = 1, bands do
 				local y = groundY + h * k / (bands + 1)
-				local c = rng:NextNumber(0, 1) < 0.7 and neon or NEONS[rng:NextInteger(1, #NEONS)]
+				local lit = rng:NextNumber(0, 1) < 0.6
+				local c = lit and Color3.fromRGB(235, 200, 130) or Color3.fromRGB(40, 46, 60)
 				local p = Vector3.new(center.X, y, center.Z)
-				part(city, Vector3.new(w + 0.4, 1.2, d + 0.4), CFrame.lookAt(p, p + t), c, Enum.Material.Neon, rng:NextNumber(0, 1) * 0.5)
+				part(city, Vector3.new(w + 0.4, 1.2, d + 0.4), CFrame.lookAt(p, p + t), c, Enum.Material.Glass)
 			end
 		end
-		-- огонёк на крыше
-		local top = Vector3.new(center.X, groundY + h + 1, center.Z)
-		part(city, Vector3.new(2, 2, 2), CFrame.new(top), Color3.fromRGB(255, 40, 60), Enum.Material.Neon)
 	end
 
 	for i = 1, N, 3 do
@@ -338,10 +317,6 @@ function Track:build(parent, checkpoints, padSpots)
 			end
 		end
 	end
-	-- закатное неоновое солнце на горизонте
-	local sunPos = Vector3.new(cx, groundY + 260, maxZ + 1800)
-	local sun = part(city, Vector3.new(2, 900, 900), CFrame.lookAt(sunPos, Vector3.new(cx, groundY + 260, cz)) * CFrame.Angles(0, math.pi / 2, 0), Color3.fromRGB(255, 90, 120), Enum.Material.Neon)
-	sun.Shape = Enum.PartType.Cylinder
 	city.Parent = parent
 
 	return { gates = gates, pads = pads, groundY = groundY }
