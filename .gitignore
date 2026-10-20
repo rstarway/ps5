@@ -9,3 +9,6 @@ __pycache__/
 
 # сырые модели из Hunyuan3D (большие); в репо только обработанные assets/hunyuan/ready/
 assets/hunyuan/*.glb
+
+# локальные настройки Claude Code
+.claude/settings.local.json
