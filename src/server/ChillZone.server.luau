@@ -395,10 +395,11 @@ local function plantHills(origin, slot)
 	local folder = Instance.new("Folder")
 	folder.Name = "Hills_" .. slot
 	local rng = Random.new(1000 + slot)
-	local kinds = { "Pine", "Pine", "ShadeTree" }
+	-- лёгкие версии деревьев (~3 тыс. треугольников): лес видно только издалека, полные модели тут не нужны
+	local kinds = { "HillPine", "HillPine", "HillTree" }
 	local placed = {}
 	for _ = 1, 260 do
-		if #placed >= 70 then
+		if #placed >= 40 then
 			break
 		end
 		local x = rng:NextNumber(-HILL_X + 20, HILL_X - 20)
@@ -407,14 +408,14 @@ local function plantHills(origin, slot)
 		local far = h > 4
 		local free = true
 		for _, p in placed do
-			if (p - Vector3.new(x, 0, z)).Magnitude < 16 then
+			if (p - Vector3.new(x, 0, z)).Magnitude < 22 then
 				free = false
 				break
 			end
 		end
 		if far and free then
 			local kind = kinds[rng:NextInteger(1, #kinds)]
-			local size = (kind == "Pine" and 24 or 20) * rng:NextNumber(0.8, 1.25)
+			local size = (kind == "HillPine" and 24 or 20) * rng:NextNumber(0.8, 1.25)
 			local cf = CFrame.new(origin + Vector3.new(x, h - 0.8, z)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
 			local tree = placeAsset(kind, cf, size, "height")
 			if tree then
