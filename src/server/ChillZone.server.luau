@@ -396,7 +396,8 @@ local function plantHills(origin, slot)
 	folder.Name = "Hills_" .. slot
 	local rng = Random.new(1000 + slot)
 	-- лёгкие версии деревьев (~3 тыс. треугольников): лес видно только издалека, полные модели тут не нужны
-	local kinds = { "HillPine", "HillPine", "HillTree" }
+	-- только хвойные: лиственные кроны на склонах издалека выглядят как грибы
+	local kinds = { "HillPine" }
 	local placed = {}
 	for _ = 1, 260 do
 		if #placed >= 40 then

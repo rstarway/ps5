@@ -74,6 +74,21 @@ function World.Build()
 	light.Range = 60
 	light.Face = Enum.NormalId.Bottom
 	light.Parent = spot
+	-- студийный свет как на продуктовой съёмке: мягкий фронтальный и два контровых,
+	-- иначе белые боковины консоли без неона уходят в чёрное
+	for _, info in {
+		{ Vector3.new(0, 9, 24), 2.2, Color3.fromRGB(255, 246, 236) },
+		{ Vector3.new(-18, 14, -6), 1.6, Color3.fromRGB(205, 220, 255) },
+		{ Vector3.new(18, 14, -6), 1.6, Color3.fromRGB(205, 220, 255) },
+	} do
+		local holder = part({ Name = "StudioLight", Size = Vector3.one, Transparency = 1, Position = info[1] })
+		local fill = Instance.new("PointLight")
+		fill.Range = 34
+		fill.Brightness = info[2]
+		fill.Color = info[3]
+		fill.Shadows = false
+		fill.Parent = holder
+	end
 
 	local function paint(model)
 		-- Части из Blender названы по цвету: *_White, *_Black, *Light_Blue*

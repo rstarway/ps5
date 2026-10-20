@@ -61,8 +61,14 @@
 4. Studio MCP `insert_asset` → нормализация (только MeshPart+SurfaceAppearance, без тегов CollectionService,
    опора внизу по центру) → `SerializationService` → POST в мост → `assets/roblox/<Name>.rbxm`.
    Rojo кладёт папку в `ServerStorage.ChillZoneAssets`; сервер ставит модели на метки `AssetSpot`.
-Готово: Lounger. Нужны: OutdoorSofa, Umbrella, SideTable, Car, OliveTree, MapleTree, ShadeTree, Grass, Boxwood,
-Pine (холмы); уровни: PottedOlive, Lavender, CherryTree, HotTub, BBQIsland, SportsCar, Daybed, Sculpture, TrophyStatue.
+Быстрее всего (без просмотрщика сайта): в консоли страницы `fetch('/api/3d/creations/list', POST {limit:20})` →
+`creations[i].result[v].urlResult.glb` → blob → кнопка на странице, по клику `a.download` (Chrome разрешает загрузку
+только по реальному клику; с limit 40 API отвечает пустотой). `tools/asset_pipeline.py probe/build <Name>`.
+Импорт glTF в Roblox разворачивает модель на 180° — prep_asset.py это учитывает («перед» на +Z).
+Готово: Lounger, OutdoorSofa, Umbrella, SideTable, Armchair, FloorLamp, PottedPlant, Boxwood, Grass, ShadeTree,
+HillPine (3 тыс. треуг.), OliveTree (не используется: «зонтик» не вписался), Car — из Creator Store («2022 Colt RIOLU»,
+вымышленная марка; скрипты/GUI/сиденья вырезаны, номер снят). Сгенерированные машины — каша на стёклах/номерах, не брать.
+Нужны (уровни): PottedOlive, Lavender, CherryTree, HotTub, BBQIsland, SportsCar, Daybed, Sculpture, TrophyStatue.
 
 ## Архитектура (кратко)
 

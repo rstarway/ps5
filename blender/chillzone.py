@@ -642,12 +642,12 @@ def garden():
         box("Gravel", (13, 0.15, 2), (side * 22.5, 0.075, 21.5))
         for x in (17.5, 22.5, 27.5):
             asset("Grass", (side * x, 0.15, 21.5), size=2.6, footprint=(1.8, 1.8))
-    asset("OliveTree", (-24, 0, 70), size=16, footprint=(10, 10))
-    asset("MapleTree", (22, 0, 80), size=13, footprint=(9, 9))
-    asset("OliveTree", (56, 0, 88), yaw=140, size=15, footprint=(10, 10))
+    asset("ShadeTree", (-24, 0, 70), size=18, footprint=(10, 10))
+    asset("ShadeTree", (22, 0, 80), yaw=120, size=15, footprint=(9, 9))
+    asset("ShadeTree", (56, 0, 88), yaw=240, size=17, footprint=(10, 10))
     asset("ShadeTree", (-10, 0, -33), size=22, footprint=(14, 14))
     asset("ShadeTree", (44, 0, -31), yaw=70, size=20, footprint=(14, 14))
-    asset("MapleTree", (-70, 0, 16), yaw=200, size=12, footprint=(9, 9))
+    asset("ShadeTree", (-70, 0, 16), yaw=200, size=14, footprint=(9, 9))
 
 
 # ---------------------------------------------------------------- zone upgrades: the chill zone grows with the owner's progress
