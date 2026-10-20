@@ -210,22 +210,43 @@ local function buildStoreModel(info)
 	local model = Instance.new("Model")
 	model.Name = info.name
 	local pivot = CFrame.new(info.pivot[1], info.pivot[2], info.pivot[3])
-	for _, d in info.parts do
+	-- меши качаются параллельно: по очереди это несколько секунд, и всё это время игрок ждёт спавна
+	local meshes, pending, failure = {}, 0, nil
+	for i, d in info.parts do
+		if d.class ~= "Seat" then
+			pending += 1
+			task.spawn(function()
+				local ok, result = pcall(function()
+					return AssetService:CreateMeshPartAsync(d.mesh, { CollisionFidelity = Enum.CollisionFidelity.Box })
+				end)
+				if ok and result then
+					meshes[i] = result
+				else
+					failure = failure or result or "no mesh"
+				end
+				pending -= 1
+			end)
+		end
+	end
+	while pending > 0 do
+		task.wait()
+	end
+	if failure then
+		for _, m in meshes do
+			m:Destroy()
+		end
+		model:Destroy()
+		warn("[PS5] Creator Store model failed, keeping the Blender one:", info.name, failure)
+		return nil
+	end
+	for i, d in info.parts do
 		local p
 		if d.class == "Seat" then
 			p = Instance.new("Seat")
 			p.Transparency = 1
 			p.CanCollide = false
 		else
-			local ok, result = pcall(function()
-				return AssetService:CreateMeshPartAsync(d.mesh, { CollisionFidelity = Enum.CollisionFidelity.Box })
-			end)
-			if not ok or not result then
-				model:Destroy()
-				warn("[PS5] Creator Store model failed, keeping the Blender one:", info.name, result)
-				return nil
-			end
-			p = result
+			p = meshes[i]
 			if d.texture ~= "" then
 				p.TextureID = d.texture
 			end

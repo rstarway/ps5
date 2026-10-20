@@ -109,15 +109,13 @@ local function meshPartFrom(mesh)
 	return AssetService:CreateMeshPartAsync(Content.fromObject(mesh))
 end
 
--- Модель из модуля сетки ({ {kind, v, n, t[, uv, color, material, transparency]}, ... }) или nil.
--- yieldEvery: пауза после каждых N деталей, чтобы большая сцена не подвешивала кадр.
-function Embedded.Model(module, name, yieldEvery)
-	if not module then
-		return nil
-	end
+-- Собранные модели по модулю. EditableMesh расходует ограниченный бюджет памяти клиента,
+-- а клоны MeshPart ссылаются на тот же EditableMesh, поэтому каждую модель строим один раз.
+local modelCache = {}
+
+local function buildModel(module, yieldEvery)
 	local ok, result = pcall(function()
 		local model = Instance.new("Model")
-		model.Name = name
 		for index, part in require(module) do
 			local mesh = AssetService:CreateEditableMesh()
 			local verts, normals, uvs = {}, {}, {}
@@ -175,6 +173,30 @@ function Embedded.Model(module, name, yieldEvery)
 		return nil
 	end
 	return result
+end
+
+-- Модель из модуля сетки ({ {kind, v, n, t[, uv, color, material, transparency]}, ... }) или nil.
+-- yieldEvery: пауза после каждых N деталей, чтобы большая сцена не подвешивала кадр.
+function Embedded.Model(module, name, yieldEvery)
+	if not module then
+		return nil
+	end
+	-- CreateMeshPartAsync уступает поток: параллельные вызовы ждут первую сборку
+	while modelCache[module] == "building" do
+		task.wait()
+	end
+	local template = modelCache[module]
+	if template == nil then
+		modelCache[module] = "building"
+		template = buildModel(module, yieldEvery) or false
+		modelCache[module] = template
+	end
+	if not template then
+		return nil
+	end
+	local model = template:Clone()
+	model.Name = name
+	return model
 end
 
 return Embedded

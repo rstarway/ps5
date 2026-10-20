@@ -14,6 +14,12 @@
         "$className": "Folder"
       }
     },
+    "ReplicatedFirst": {
+      "$className": "ReplicatedFirst",
+      "PS5Loading": {
+        "$path": "src/client/Loading.client.luau"
+      }
+    },
     "ServerScriptService": {
       "$className": "ServerScriptService",
       "PS5Server": {

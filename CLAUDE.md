@@ -26,6 +26,9 @@
 
 ## Как запускать и тестировать
 
+- Быстрая синхронизация без плагина Rojo: `python -m http.server 34877 --bind 127.0.0.1` в корне
+  репо, затем в `execute_luau` (Edit) временно `HttpService.HttpEnabled = true`, `GetAsync` файла →
+  `.Source` скрипта, и вернуть `HttpEnabled` как было.
 - Синхронизация: Rojo 7.6.1 (`rokit.toml`). `rojo serve` + плагин Rojo в Studio → Connect.
 - Пересобрать файл места: `rojo build default.project.json -o PS5Sandbox.rbxlx`
   (после любых правок в `src/` — чтобы `PS5Sandbox.rbxlx` в репо был актуален).
@@ -58,15 +61,15 @@
 
 ## Известные проблемы / TODO
 
-- ~4 с чёрного/фиксированного экрана до спавна персонажа, пока сервер строит шаблон зоны.
-  Можно добавить экран загрузки в ReplicatedFirst или ускорить сборку (меши Creator Store).
-- Warning: `Failed to create empty EditableMesh ... memory budget` →
-  `[PS5] Embedded visuals unavailable, using fallback` — консоль в заставке собирается из
-  деталей вместо меша. Проверить бюджет EditableMesh/порядок создания.
-- Warning: `rbxassetid://203785492` — «Asset type does not match», `rbxassetid://81504106` —
-  «asset not found» (звуки/картинки из Theme или мира) — заменить ID.
-- Warning: `Player:Move called, but player currently has no humanoid` (до спавна).
+- Бюджет EditableMesh/EditableImage на клиенте маленький: в Studio влезает ~3 модели из
+  `Assets/*Mesh`. `Embedded.Model` поэтому строит каждую модель один раз и отдаёт клоны
+  (клоны MeshPart ссылаются на тот же EditableMesh). Новые встроенные модели добавлять с оглядкой.
+- Warning `rbxassetid://203785492` / `81504106` — не наши: ассеты аватара/Roblox (`81504106` —
+  текстура шляпы аватара). Игнорировать.
+- Warning `Player:Move called, but player currently has no humanoid` — от модуля управления до спавна, безвредно.
 - На главном экране по умолчанию только Star Pilot; остальные игры ставятся через магазин.
+- Идея: модели для чиллзоны/игр можно генерировать через Hunyuan3D-2
+  (https://huggingface.co/spaces/tencent/Hunyuan3D-2) → GLB → Blender → `export_luau.py` или импорт в Studio.
 
 ## Журнал
 
@@ -79,3 +82,8 @@
   один раз на участке, интро → камера за игроком, PS5 → загрузка → пользователь → главный
   экран → Star Pilot → центр управления — всё работает, ошибок скриптов нет.
   Добавлены `rokit.toml` (rojo 7.6.1) и этот файл.
+- **2026-10-20 (2)** — Консоль/геймпад в заставке PS5 падали в запасной вариант: кончался бюджет
+  EditableMesh (каждая PS5 в каждой зоне + заставка строили свои меши). `Embedded.Model` теперь
+  кэширует модель и отдаёт клоны. Меши дивана из Creator Store грузятся параллельно (1.9 с → 0.4 с),
+  добавлен экран загрузки `ReplicatedFirst.PS5Loading` (`src/client/Loading.client.luau`) вместо
+  чёрного экрана до спавна. Проверено в Studio: геймпад и консоль в заставке — MeshPart, предупреждений нет.
