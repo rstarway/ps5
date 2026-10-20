@@ -9,12 +9,12 @@ Progress.PLAYED_POINTS = 20 -- за каждую игру, в которую и�
 
 -- Уровни чиллзоны. Детали уровня описаны в blender/chillzone.py (with tier(n)).
 Progress.TIERS = {
-	{ at = 0, name = "Cabin", unlocks = "A cosy cabin to start with" },
-	{ at = 60, name = "Cozy", unlocks = "Flowers along the path, window boxes and a mailbox" },
-	{ at = 200, name = "Garden", unlocks = "A fountain, a flower arch and blossom trees" },
-	{ at = 500, name = "Neon Nights", unlocks = "Neon lights, a hot tub and sky beams" },
-	{ at = 1000, name = "Luxury", unlocks = "A red carpet and a golden controller statue" },
-	{ at = 1800, name = "Legend", unlocks = "A floating platinum trophy, crystals, aurora and fireworks" },
+	{ at = 0, name = "Home", unlocks = "A modern house with a pool, a fire lounge and a carport" },
+	{ at = 60, name = "Cozy", unlocks = "Planters and a rug on the terrace, olive trees at the gate" },
+	{ at = 200, name = "Garden", unlocks = "A still-water basin, lavender and cherry trees" },
+	{ at = 500, name = "Lounge", unlocks = "A hot tub by the pool and an outdoor kitchen" },
+	{ at = 1000, name = "Luxury", unlocks = "A sports car, a pool daybed and a bronze sculpture" },
+	{ at = 1800, name = "Legend", unlocks = "A rooftop terrace and a golden trophy statue" },
 }
 
 function Progress.Tier(points)

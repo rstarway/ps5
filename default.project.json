@@ -20,6 +20,12 @@
         "$path": "src/client/Loading.client.luau"
       }
     },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "ChillZoneAssets": {
+        "$path": "assets/roblox"
+      }
+    },
     "ServerScriptService": {
       "$className": "ServerScriptService",
       "PS5Server": {
@@ -52,7 +58,7 @@
       "Terrain": {
         "$className": "Terrain",
         "$properties": {
-          "Decoration": false,
+          "Decoration": true,
           "WaterWaveSize": 0.12,
           "WaterReflectance": 0.7,
           "WaterTransparency": 0.45

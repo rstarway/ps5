@@ -170,6 +170,70 @@ def _luau_special(row, spec):
     return _luau_value(dict(row=row, **spec))
 
 
+def _axis_box(obj, pos, rot, size):
+    """World AABB of a Block whose rotation is a multiple of 90° (else None)."""
+    import itertools
+    ext = [0.0, 0.0, 0.0]
+    for i in range(3):
+        for j in range(3):
+            v = abs(rot[i][j])
+            if 1e-3 < v < 1 - 1e-3:
+                return None
+            ext[i] += v * size[j] / 2
+    return [(pos[i] - ext[i], pos[i] + ext[i]) for i in range(3)]
+
+
+def check_quality(module, objects, boxes):
+    """Fails the export on z-fighting (two visible blocks sharing an overlapping face plane) and on asset spots
+    that overlap each other or a solid part. boxes: list of (obj, aabb) for axis-aligned blocks."""
+    problems = []
+    visible = [(o, b) for o, b in boxes if module.STYLES[o["rbx"]][2] < 1 and not o.hide_render]
+    eps = 1e-3
+    for a in range(len(visible)):
+        oa, ba = visible[a]
+        for b in range(a + 1, len(visible)):
+            ob, bb = visible[b]
+            # quick reject: boxes must touch or overlap
+            if any(ba[i][1] < bb[i][0] - eps or bb[i][1] < ba[i][0] - eps for i in range(3)):
+                continue
+            for axis in range(3):
+                for side in (0, 1):
+                    if abs(ba[axis][side] - bb[axis][side]) > eps:
+                        continue
+                    others = [i for i in range(3) if i != axis]
+                    area = 1.0
+                    for i in others:
+                        area *= max(0.0, min(ba[i][1], bb[i][1]) - max(ba[i][0], bb[i][0]))
+                    if area > 1e-3:
+                        problems.append(f"z-fighting: {oa['rbx']} {oa.name} and {ob['rbx']} {ob.name} "
+                                        f"share plane {'xyz'[axis]}={ba[axis][side]:.3f} ({area:.2f} sq studs)")
+    spots = getattr(module, "ASSETS", [])
+    rects = []
+    for name, at, yaw, fit, size, fp, tier in spots:
+        rects.append((name, at, (at[0] - fp[0] / 2, at[0] + fp[0] / 2), (at[2] - fp[1] / 2, at[2] + fp[1] / 2)))
+    for i in range(len(rects)):
+        for j in range(i + 1, len(rects)):
+            ni, ai, xi, zi = rects[i]
+            nj, aj, xj, zj = rects[j]
+            if abs(ai[1] - aj[1]) > 6:
+                continue
+            if min(xi[1], xj[1]) - max(xi[0], xj[0]) > 0.05 and min(zi[1], zj[1]) - max(zi[0], zj[0]) > 0.05:
+                problems.append(f"asset overlap: {ni} at {ai} and {nj} at {aj}")
+    for name, at, xr, zr in rects:
+        for o, bx in boxes:
+            if not o.get("collide"):
+                continue
+            if min(xr[1], bx[0][1]) - max(xr[0], bx[0][0]) <= 0.05 or min(zr[1], bx[2][1]) - max(zr[0], bx[2][0]) <= 0.05:
+                continue
+            if bx[1][1] > at[1] + 0.05 and bx[1][0] < at[1] + 3:
+                problems.append(f"asset {name} at {at} collides with {o['rbx']} {o.name}")
+    for p in problems:
+        print("QUALITY", p)
+    if problems:
+        raise SystemExit(f"{len(problems)} quality problems, export aborted")
+    print(f"quality check: {len(visible)} blocks, {len(rects)} asset spots, no overlaps")
+
+
 def export_parts(module_name, out_name, title):
     """Scene of primitives (obj["prim"], obj["size"], obj["rbx"]) -> list of Roblox parts with CFrames."""
     from mathutils import Matrix
@@ -181,12 +245,16 @@ def export_parts(module_name, out_name, title):
     keys = sorted({o["rbx"] for o in objects})
     index = {k: i + 1 for i, k in enumerate(keys)}
     shapes = {"Block": 1, "Cylinder": 2, "Sphere": 3, "Wedge": 4}
-    rows, specials = [], []
+    rows, specials, boxes = [], [], []
     for obj in objects:
         mw = obj.matrix_world
         pos = m @ mw.to_translation()
         rot = m @ mw.to_3x3().normalized() @ m.transposed()
         sx, sy, sz = obj["size"]
+        if obj["prim"] == "Block":
+            aabb = _axis_box(obj, pos, rot, (sx, sy, sz))
+            if aabb:
+                boxes.append((obj, aabb))
         vals = [index[obj["rbx"]], shapes[obj["prim"]], pos.x, pos.y, pos.z] + [rot[i][j] for i in range(3) for j in range(3)] + [sx, sy, sz]
         cells = [("%d" % v) if k < 2 else (("%.4f" if 5 <= k < 14 else "%.3f") % v).rstrip("0").rstrip(".") or "0" for k, v in enumerate(vals)]
         cells = [c if c != "-0" else "0" for c in cells]
@@ -194,6 +262,7 @@ def export_parts(module_name, out_name, title):
         spec = getattr(module, "SPECIALS", {}).get(obj.name)
         if spec:
             specials.append(_luau_special(len(rows), spec))
+    check_quality(module, objects, boxes)
     styles = []
     for k in keys:
         rgb, material, transparency = module.STYLES[k]
@@ -245,6 +314,9 @@ def export_game_art():
 
 
 if __name__ == "__main__":
+    # blender -b -P blender/export_luau.py -- chillzone  (аргументы после «--»)
+    if "--" in sys.argv:
+        sys.argv = [sys.argv[0]] + sys.argv[sys.argv.index("--") + 1:]
     if len(sys.argv) > 1 and sys.argv[1] == "art":
         export_game_art()
         sys.exit(0)

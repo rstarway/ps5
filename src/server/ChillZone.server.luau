@@ -39,8 +39,9 @@ end
 local function sign(p, face, text, color, size)
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = face
-	gui.LightInfluence = 0
-	gui.Brightness = 2
+	-- табличка освещается как обычная поверхность: никакого свечения
+	gui.LightInfluence = 1
+	gui.Brightness = 1
 	gui.PixelsPerStud = 50
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	local label = Instance.new("TextLabel")
@@ -49,42 +50,92 @@ local function sign(p, face, text, color, size)
 	label.Text = text
 	label.TextColor3 = color
 	label.TextScaled = true
-	label.Font = Enum.Font.BuilderSansExtraBold
+	label.Font = Enum.Font.BuilderSansMedium
 	label.Parent = gui
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = color
-	stroke.Thickness = size or 3
-	stroke.Transparency = 0.6
-	stroke.Parent = label
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0.18, 0)
+	padding.PaddingBottom = UDim.new(0.18, 0)
+	padding.Parent = label
 	gui.Parent = p
 	return gui
 end
 
--- Земля: Terrain из утоптанной земли без травы (верх на y = 0) и пруд с живой водой.
--- Под домом и верандой земля вырезана: гладкий Terrain поднимается до полувокселя и лез бы сквозь пол.
+-- Земля: участок идеально ровный (поверхность ровно на y = 0, по границе вокселей, поэтому Terrain нигде
+-- не вылезает сквозь дорожки и полы), за живой изгородью рельеф плавно поднимается в лесистые холмы.
+-- Бассейн: Terrain-вода в плиточной чаше из Blender (метка Pool с координатами).
 local terrain = Workspace.Terrain
-local function fillTerrain(origin)
-	local function at(x, y, z)
-		return CFrame.new(origin + Vector3.new(x, y, z))
-	end
-	-- воксели 4×4: блок до y = -2 даёт гладкую поверхность ровно на y ≈ 0
-	terrain:FillBlock(at(0, -8, 40), Vector3.new(400, 12, 400), M.Ground)
-	terrain:FillBlock(at(0, 3, 0), Vector3.new(62, 10, 42), M.Air)
-	terrain:FillBlock(at(0, 3, 25.5), Vector3.new(26, 10, 11), M.Air)
-	terrain:FillBlock(at(0, -9, 4), Vector3.new(62, 10, 54), M.Ground)
-	-- пруд: сначала вырезаем воздух, иначе верхний слой вокселей остаётся землёй
-	terrain:FillCylinder(at(42, 0, 52), 6, 13, M.Air)
-	terrain:FillCylinder(at(42, -3, 52), 6, 12.6, M.Water)
-end
-terrain.WaterColor = rgb(36, 96, 128)
-terrain.WaterTransparency = 0.45
-terrain.WaterReflectance = 0.7
-terrain.WaterWaveSize = 0.12
-terrain.WaterWaveSpeed = 8
-pcall(function()
-	terrain:SetMaterialColor(M.Ground, rgb(84, 72, 58))
-end)
+local VOXEL = 4
+local PLOT_HALF_X, PLOT_Z0, PLOT_Z1 = 92, -57, 128 -- ровная зона (изгородь + 12 студов газона за ней)
+local HILL_X, HILL_Z0, HILL_Z1 = 256, -228, 296 -- куда тянутся холмы (участки соседей через 520 по X)
 
+local function smoothstep(a, b, x)
+	local t = math.clamp((x - a) / (b - a), 0, 1)
+	return t * t * (3 - 2 * t)
+end
+
+-- высота земли относительно начала участка
+local function groundHeight(x, z)
+	local dx = math.max(math.abs(x) - PLOT_HALF_X, 0)
+	local dz = math.max(z - PLOT_Z1, PLOT_Z0 - z, 0)
+	local d = math.sqrt(dx * dx + dz * dz)
+	if d <= 0 then
+		return 0
+	end
+	local big = 0.65 + 0.35 * math.noise(x / 90, z / 90, 0.37)
+	local small = math.noise(x / 28, z / 28, 1.91) * 5
+	return 46 * smoothstep(6, 130, d) * big + small * smoothstep(0, 40, d)
+end
+
+local function fillTerrain(origin)
+	-- WriteVoxels требует области, выровненной по сетке 4 студа
+	local x0, x1 = origin.X - HILL_X, origin.X + HILL_X
+	local z0, z1 = origin.Z + HILL_Z0, origin.Z + HILL_Z1
+	local y0, y1 = -16, 64
+	local nx, ny, nz = (x1 - x0) / VOXEL, (y1 - y0) / VOXEL, (z1 - z0) / VOXEL
+	local materials, occupancy = table.create(nx), table.create(nx)
+	for i = 1, nx do
+		local mi, oi = table.create(ny), table.create(ny)
+		for j = 1, ny do
+			mi[j], oi[j] = table.create(nz), table.create(nz)
+		end
+		local x = x0 + (i - 0.5) * VOXEL - origin.X
+		for k = 1, nz do
+			local z = z0 + (k - 0.5) * VOXEL - origin.Z
+			local h = groundHeight(x, z)
+			local mat = (h > 6 and math.noise(x / 40, z / 40, 7.3) > 0.15) and M.LeafyGrass or M.Grass
+			for j = 1, ny do
+				-- гладкий Terrain рисует поверхность по центрам вокселей: занятость 0.5 у вокселя [-4, 0]
+				-- даёт поверхность ровно на y = 0 (полностью занятый воксель поднял бы газон на 2 студа)
+				local vy = y0 + (j - 1) * VOXEL
+				local occ = math.clamp((h - vy - VOXEL / 2) / VOXEL, 0, 1)
+				mi[j][k] = occ > 0 and mat or M.Air
+				oi[j][k] = occ
+			end
+		end
+		materials[i], occupancy[i] = mi, oi
+	end
+	terrain:WriteVoxels(Region3.new(Vector3.new(x0, y0, z0), Vector3.new(x1, y1, z1)), VOXEL, materials, occupancy)
+	-- бассейн: сначала воздух под чашей, потом вода до уровня Surface
+	local pool = zone:FindFirstChild("Pool")
+	if pool then
+		local px0, px1 = pool:GetAttribute("X0"), pool:GetAttribute("X1")
+		local pz0, pz1 = pool:GetAttribute("Z0"), pool:GetAttribute("Z1")
+		local bottom, surface = pool:GetAttribute("Bottom"), pool:GetAttribute("Surface")
+		local center = origin + Vector3.new((px0 + px1) / 2, 0, (pz0 + pz1) / 2)
+		terrain:FillBlock(CFrame.new(center + Vector3.new(0, -3, 0)), Vector3.new(px1 - px0 + 2, 6, pz1 - pz0 + 2), M.Air)
+		terrain:FillBlock(CFrame.new(center + Vector3.new(0, (bottom + surface) / 2, 0)),
+			Vector3.new(px1 - px0, surface - bottom, pz1 - pz0), M.Water)
+	end
+end
+terrain.WaterColor = rgb(40, 118, 140)
+terrain.WaterTransparency = 0.6
+terrain.WaterReflectance = 0.6
+terrain.WaterWaveSize = 0.05
+terrain.WaterWaveSpeed = 6
+pcall(function()
+	terrain:SetMaterialColor(M.Grass, rgb(82, 110, 58))
+	terrain:SetMaterialColor(M.LeafyGrass, rgb(70, 98, 52))
+end)
 
 -- Детали из Blender. Обычные идут в модель Scenery; особые (метки, свет, таблички, огонь) кладутся прямо в ChillZone
 -- под своими именами, их ищет клиент (ConsoleSpot, TVScreen, TrophySlot, GameSlot, StatsBoard, Bulb, GuideArrow…).
@@ -282,7 +333,101 @@ if okStore then
 	end
 end
 
--- Точка появления из Blender: перед домом, лицом к входу
+-- Модели из Hunyuan3D (assets/roblox/*.rbxm → ServerStorage.ChillZoneAssets) ставятся на метки AssetSpot из Blender:
+-- низ модели по центру на метку, поворот Yaw, масштаб под Size по высоте (Fit = "height") или по длинной стороне.
+-- Модели нормализованы при импорте: опора внизу по центру, «перед» смотрит на +Z.
+local assetLibrary = game:GetService("ServerStorage"):FindFirstChild("ChillZoneAssets")
+
+local function placeAsset(name, cf, size, fit, tier)
+	local source = assetLibrary and assetLibrary:FindFirstChild(name)
+	if not source then
+		return nil
+	end
+	local model = source:Clone()
+	local _, box = model:GetBoundingBox()
+	local current = fit == "length" and math.max(box.X, box.Z) or box.Y
+	if size and current > 0 then
+		model:ScaleTo(model:GetScale() * size / current)
+	end
+	model:PivotTo(cf)
+	if tier and tier > 1 then
+		for _, p in model:GetDescendants() do
+			if p:IsA("BasePart") then
+				p:SetAttribute("Tier", tier)
+			end
+		end
+	end
+	return model
+end
+
+local function placeAssets(z)
+	local missing = {}
+	for _, spot in z:GetChildren() do
+		if spot.Name == "AssetSpot" then
+			local name = spot:GetAttribute("Asset")
+			local cf = CFrame.new(spot.Position) * CFrame.Angles(0, math.rad(spot:GetAttribute("Yaw") or 0), 0)
+			local model = placeAsset(name, cf, spot:GetAttribute("Size"), spot:GetAttribute("Fit"), spot:GetAttribute("Tier"))
+			if model then
+				model.Parent = z
+				spot:Destroy()
+			else
+				missing[name] = true
+			end
+		end
+	end
+	local names = {}
+	for name in missing do
+		table.insert(names, name)
+	end
+	if #names > 0 then
+		table.sort(names)
+		warn("[PS5] Chill zone models not imported yet:", table.concat(names, ", "))
+	end
+end
+
+-- Лес на холмах вокруг участка (свой для каждого участка, живёт вместе с Terrain)
+local hillsFolder = Instance.new("Folder")
+hillsFolder.Name = "ChillHills"
+hillsFolder.Parent = Workspace
+
+local function plantHills(origin, slot)
+	local folder = Instance.new("Folder")
+	folder.Name = "Hills_" .. slot
+	local rng = Random.new(1000 + slot)
+	local kinds = { "Pine", "Pine", "ShadeTree" }
+	local placed = {}
+	for _ = 1, 260 do
+		if #placed >= 70 then
+			break
+		end
+		local x = rng:NextNumber(-HILL_X + 20, HILL_X - 20)
+		local z = rng:NextNumber(HILL_Z0 + 20, HILL_Z1 - 20)
+		local h = groundHeight(x, z)
+		local far = h > 4
+		local free = true
+		for _, p in placed do
+			if (p - Vector3.new(x, 0, z)).Magnitude < 16 then
+				free = false
+				break
+			end
+		end
+		if far and free then
+			local kind = kinds[rng:NextInteger(1, #kinds)]
+			local size = (kind == "Pine" and 24 or 20) * rng:NextNumber(0.8, 1.25)
+			local cf = CFrame.new(origin + Vector3.new(x, h - 0.8, z)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
+			local tree = placeAsset(kind, cf, size, "height")
+			if tree then
+				tree.Parent = folder
+				table.insert(placed, Vector3.new(x, 0, z))
+			end
+		end
+	end
+	folder.Parent = hillsFolder
+end
+
+placeAssets(zone)
+
+-- Точка появления из Blender: у калитки, лицом к дому
 local spawnPoint = zone:FindFirstChild("SpawnPoint")
 local spawn = Instance.new("SpawnLocation")
 spawn.Name = "Spawn"
@@ -377,6 +522,7 @@ local function createZone(player)
 	if not terrainReady[slot] then
 		terrainReady[slot] = true
 		fillTerrain(origin)
+		plantHills(origin, slot)
 	end
 	local z = zone:Clone()
 	z.Name = "Zone_" .. player.UserId
@@ -474,23 +620,24 @@ for _, plr in Players:GetPlayers() do
 	task.spawn(onPlayerAdded, plr)
 end
 
--- Вечернее освещение
-Lighting.ClockTime = 19.3
-Lighting.Brightness = 1.6
-Lighting.Ambient = rgb(55, 50, 75)
-Lighting.OutdoorAmbient = rgb(90, 80, 115)
-Lighting.EnvironmentDiffuseScale = 0.6
-Lighting.EnvironmentSpecularScale = 0.8
-if not Lighting:FindFirstChildOfClass("Atmosphere") then
-	local atmosphere = Instance.new("Atmosphere")
-	atmosphere.Density = 0.3
-	atmosphere.Offset = 0.2
-	atmosphere.Color = rgb(150, 130, 200)
-	atmosphere.Decay = rgb(90, 70, 140)
-	atmosphere.Glare = 0.3
-	atmosphere.Haze = 1.5
-	atmosphere.Parent = Lighting
-end
+-- Тёплый вечер: солнце только что село, небо ещё светлое, во дворе горят обычные тёплые лампы
+Lighting.ClockTime = 17.4
+Lighting.GeographicLatitude = 25
+Lighting.Brightness = 2.5
+Lighting.Ambient = rgb(46, 44, 52)
+Lighting.OutdoorAmbient = rgb(128, 118, 120)
+Lighting.EnvironmentDiffuseScale = 0.55
+Lighting.EnvironmentSpecularScale = 0.7
+Lighting.ShadowSoftness = 0.25
+Lighting.ExposureCompensation = 0.25
+local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
+atmosphere.Density = 0.32
+atmosphere.Offset = 0.12
+atmosphere.Color = rgb(206, 184, 166)
+atmosphere.Decay = rgb(104, 92, 110)
+atmosphere.Glare = 0.15
+atmosphere.Haze = 1.4
+atmosphere.Parent = Lighting
 -- Без Bloom/SunRays/цветокоррекции: со свечением мир и игры пересвечивались
 for _, e in Lighting:GetChildren() do
 	if e:IsA("BloomEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") then

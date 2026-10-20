@@ -3,3 +3,9 @@ target/
 __pycache__/
 *.rbxlx.lock
 *.rbxl.lock
+
+# локальные секреты (API-ключи)
+.secrets/
+
+# сырые модели из Hunyuan3D (большие); в репо только обработанные assets/hunyuan/ready/
+assets/hunyuan/*.glb
