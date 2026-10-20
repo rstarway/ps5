@@ -44,19 +44,15 @@ STYLES = {
     "Metal": ((34, 34, 38), "Metal", 0),
     "Sofa": ((70, 80, 108), "Fabric", 0),
     "Cushion": ((88, 100, 132), "Fabric", 0),
-    "Rug": ((56, 62, 112), "Carpet", 0),
-    "RugPurple": ((96, 64, 140), "Carpet", 0),
+    "Rug": ((168, 160, 148), "Carpet", 0),
     "PillowPink": ((255, 122, 162), "Fabric", 0),
     "PillowBlue": ((120, 200, 255), "Fabric", 0),
-    "BeanOrange": ((255, 120, 88), "Fabric", 0),
-    "BeanPurple": ((122, 110, 255), "Fabric", 0),
     "LampShade": ((255, 226, 184), "Fabric", 0),
     "Ceramic": ((186, 112, 82), "Concrete", 0),
     "Leaves": ((70, 132, 74), "LeafyGrass", 0),
     "LeavesDark": ((46, 100, 62), "LeafyGrass", 0),
     "Curtain": ((222, 196, 166), "Fabric", 0),
     "Blanket": ((238, 226, 204), "Fabric", 0),
-    "Knit": ((196, 120, 96), "Fabric", 0),
     "Leather": ((150, 92, 62), "Leather", 0),
     "BookRed": ((168, 62, 60), "SmoothPlastic", 0),
     "BookGreen": ((62, 118, 92), "SmoothPlastic", 0),
@@ -389,19 +385,15 @@ def terrace():
     solid(box("Concrete", (30, 1.0, 8), (0, 0.5, 24.5)))
     solid(box("Concrete", (30, 0.66, 1.2), (0, 0.33, 29.1)))
     solid(box("Concrete", (30, 0.33, 1.2), (0, 0.165, 30.3)))
-    # uplights washing the white piers and the slatted ends
-    for x in (-8.5, 8.5):
-        special(cyl("Metal", 0.25, 0.1, (x, 1.05, 20.9), segments=12), "Uplight",
-                light=light(WARM, 16, 1.4, surface="Top", angle=35))
 
 
 # ---------------------------------------------------------------- PLAY zone (centre): TV, PS5, sofa
 CONSOLE = (-5.5, 4, -16.3)
+FLOOR = 1.08  # top of the wooden floor
 
 
 def play_zone():
     special(box("Rug", (24, 0.1, 18), (0, 1.1, -5), bevel=0.8), "Rug")
-    box("Blanket", (12, 0.08, 7), (0, 1.16, -3.5), bevel=0.4)
     # slatted accent wall
     box("WoodDark", (24, 15.6, 0.15), (0, 8.9, -18.95))
     x = -11.6
@@ -441,20 +433,14 @@ def play_zone():
             special(flame, "CandleLight", light=light((255, 170, 90), 10, 1.2, shadows=True, flicker=True))
     for dx in (-0.5, 0.5):
         cyl("Mug", 0.36, 0.7, (2.8 + dx, 3.6, -3.0 + dx * 0.4), segments=10)
-    # arc floor lamp and a plant either side of the TV stand
-    cyl("Metal", 1.2, 0.3, (-11, 1.2, -16), segments=20)
-    cyl("Metal", 0.15, 8.6, (-11, 5.6, -16), segments=8)
-    special(cyl("LampShade", 1.4, 2.0, (-11, 10.5, -16), segments=20, radius2=0.9), "LampShade",
-            light=light((255, 190, 130), 22, 1.5, shadows=True))
-    potted_plant(11, -16.5, 1.2)
+    # floor lamp and a plant either side of the TV stand (Hunyuan models; the lamp's light is a hidden marker)
+    floor_lamp(-11.5, -16)
+    asset("PottedPlant", (11.5, FLOOR, -16.3), size=7, footprint=(3, 3))
 
 
-def potted_plant(x, z, r=1.0):
-    solid(cyl("Ceramic", r, 2.2 * r, (x, 1.0 + 1.1 * r, z), segments=16, radius2=r * 0.82, bevel=0.1))
-    for i in range(6):
-        a = i / 6 * math.tau
-        blob("Leaves" if i % 2 else "LeavesDark", 1.1 * r, (x + math.cos(a) * 0.8 * r, 1 + 2.6 * r + (i % 3) * 0.7, z + math.sin(a) * 0.8 * r),
-             scale=(0.75, 1.6, 0.75), rot=(math.cos(a) * 25, 0, math.sin(a) * 25), noise=0.15)
+def floor_lamp(x, z):
+    asset("FloorLamp", (x, FLOOR, z), size=10, footprint=(2.6, 2.6))
+    marker("LampLight", (x, 9.5, z), light=light((255, 196, 140), 22, 1.4, shadows=True))
 
 
 # ---------------------------------------------------------------- MY GAMES (left wall)
@@ -469,17 +455,11 @@ def games_zone():
             slot += 1
             marker("GameSlot", (-28.2, y + 0.2, -11.5 + i * 2.1), index=slot, rot=(0, 90, 0))
     signboard("GameSign", (0.3, 2.2, 13), (-28.85, 14.2, -2), "Right", "MY GAMES", (236, 232, 222), glow=False)
-    # beanbags to sit and browse
-    solid(blob("BeanOrange", 2.1, (-20, 2.5, -7), scale=(1.15, 0.8, 1.15), noise=0.06, subdiv=2))
-    solid(blob("BeanPurple", 2.1, (-20, 2.5, 1.5), scale=(1.15, 0.8, 1.15), noise=0.06, subdiv=2))
-    potted_plant(-26, -16.5, 1.1)
-    # reading corner by the entrance: bookshelf, armchair, tall lamp
+    asset("PottedPlant", (-25.5, FLOOR, -16.3), yaw=60, size=7, footprint=(3, 3))
+    # reading corner by the entrance: bookshelf, an armchair facing the room, a floor lamp
     bookshelf(-28.2, 14, 7)
-    armchair(-21, 14.5, 150)
-    cyl("Metal", 0.15, 9, (-25, 5.5, 17.5), segments=8)
-    cyl("Metal", 1.0, 0.2, (-25, 1.1, 17.5), segments=16)
-    special(cyl("LampShade", 0.6, 3.0, (-25, 10.5, 17.5), segments=12), "ReadingLamp",
-            light=light((255, 190, 120), 18, 1.1, shadows=True))
+    asset("Armchair", (-21.5, FLOOR, 12.5), yaw=135, size=4.6, fit="length", footprint=(4.8, 4.8))
+    floor_lamp(-25, 17.2)
 
 
 # ---------------------------------------------------------------- MY TROPHIES (right wall)
@@ -500,21 +480,10 @@ def trophy_zone():
     signboard("TrophySign", (0.3, 2.2, 14), (28.4, 16.0, 0), "Left", "MY TROPHIES", (236, 232, 222), glow=False)
     special(box("Screen", (0.3, 6, 7), (28.7, 8, 15.2)), "StatsBoard", attrs={"Face": "Left"},
             light=light((120, 160, 255), 10, 0.6))
-    cyl("RugPurple", 6.0, 0.1, (16, 1.1, 6), segments=32)
-    solid(blob("BeanPurple", 2.1, (18, 2.5, 3), scale=(1.15, 0.8, 1.15), noise=0.06, subdiv=2))
-    solid(cyl("Knit", 1.3, 1.4, (14, 1.75, 9), segments=14))
-    potted_plant(25.5, -16.5, 1.0)
+    asset("PottedPlant", (22.5, FLOOR, -16.3), yaw=200, size=6.5, footprint=(3, 3))
 
 
 # ---------------------------------------------------------------- cozy touches
-def fairy_lights(z, y=16.0):
-    for x0 in range(-28, 28, 8):
-        x1 = min(x0 + 8, 28)
-        for k in range(1, 6):
-            t = k / 6
-            blob("BulbGlass", 0.16, (x0 + (x1 - x0) * t, y - math.sin(t * math.pi) * 1.1, z), noise=0, subdiv=1)
-
-
 def curtains_z(cx, width, z):
     box("Metal", (width + 3.4, 0.18, 0.18), (cx, 14.5, z))
     for side in (-1, 1):
@@ -547,45 +516,17 @@ def bookshelf(x, cz, length):
             z += w + 0.04
 
 
-def armchair(x, z, yaw):
-    c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
-
-    def at(dx, dy, dz):
-        return (x + dx * c + dz * s_, dy, z - dx * s_ + dz * c)
-    solid(box("Leather", (4.2, 1.4, 4.0), at(0, 2.3, 0), rot=(0, yaw, 0), bevel=0.25))
-    solid(box("Leather", (4.2, 4.0, 1.0), at(0, 4.2, 1.6), rot=(-8, yaw, 0), bevel=0.3))
-    for dx in (-2.0, 2.0):
-        box("Leather", (0.8, 2.4, 4.0), at(dx, 3.0, 0), rot=(0, yaw, 0), bevel=0.25)
-    for dx in (-1.7, 1.7):
-        for dz in (-1.6, 1.6):
-            cyl("WoodDark", 0.15, 1.6, at(dx, 1.4, dz), segments=6)
-    box("Knit", (3.2, 0.3, 2.6), at(0.2, 3.15, -0.2), rot=(0, yaw + 6, 0))
-    box("PillowPink", (2.2, 1.8, 0.7), at(0, 4.1, 0.9), rot=(-12, yaw, 0), bevel=0.25)
-
-
 def cozy():
-    fairy_lights(-18.4)
-    fairy_lights(18.4)
     for side in (-1, 1):
         curtains_z(side * 17, 14, 18.6)
-    for z in (-17.5, 17.5):
-        special(box("BulbGlass", (0.2, 0.2, 0.2), (0, 15, z)), "FairyGlow",
-                light=light((255, 190, 130), 16, 0.6, surface="Back" if z < 0 else "Front", angle=150))
-    for x in (-13, 13):
-        cyl("Metal", 0.04, 3.2, (x, 14.4, 15.5), segments=4)
-        cyl("Ceramic", 0.8, 1.0, (x, 12.4, 15.5), segments=12, radius2=0.6)
-        for k in range(6):
-            a = k / 6 * math.tau
-            for j in range(3):
-                blob("Leaves" if (k + j) % 2 else "LeavesDark", 0.35, (x + math.cos(a) * 0.8, 12.6 - j * 0.7, 15.5 + math.sin(a) * 0.8),
-                     noise=0.15)
 
 
 # ---------------------------------------------------------------- yard
 # Plot: lawn x -78.8..78.8, z -43.8..113.8 inside the hedge. Ground (terrain) is flat at y = 0.
 SPAWN = (0, 0.5, 104)
 FIRE = (-50, 0, -6)
-POOL = (36, 60, 36, 52)  # inner water rectangle x0, x1, z0, z1 (aligned to the 4-stud terrain grid)
+POOL = (36, 64, 36, 56)  # inner water rectangle x0, x1, z0, z1 (aligned to the 4-stud terrain grid)
+DECK = (30, 76, 28, 64)  # teak deck around it
 CARPORT = (-62, -38, 30, 58)
 PLOT = (-78.8, 78.8, -43.8, 113.8)
 
@@ -680,19 +621,22 @@ def pool():
         box("PoolTile", (1, 4.6, d), (x, -2.3, cz))
     special(box("PoolTile", (0.1, 0.6, 3), (x0 + 0.05, -2.2, cz)), "PoolLight",
             light=light((220, 236, 255), 16, 0.8, surface="Right", angle=120))
-    # coping ring (top 0.6) and deck (top 0.5) around it
+    # coping ring (top 0.6) and deck (top 0.5) around it; the deck strips stop at the coping
     solid(box("Coping", (w + 2, 0.6, 1), (cx, 0.3, z0 - 0.5)))
     solid(box("Coping", (w + 2, 0.6, 1), (cx, 0.3, z1 + 0.5)))
     solid(box("Coping", (1, 0.6, d), (x0 - 0.5, 0.3, cz)))
     solid(box("Coping", (1, 0.6, d), (x1 + 0.5, 0.3, cz)))
-    solid(box("Deck", (40, 0.5, 7), (50, 0.25, 31.5)))
-    solid(box("Deck", (40, 0.5, 7), (50, 0.25, 56.5)))
-    solid(box("Deck", (5, 0.5, 18), (32.5, 0.25, 44)))
-    solid(box("Deck", (9, 0.5, 18), (65.5, 0.25, 44)))
-    for z in (38.5, 49.5):  # feet towards the water
-        asset("Lounger", (65.5, 0.5, z), yaw=270, size=7, fit="length", footprint=(7.1, 2.8))
-    asset("Umbrella", (65.5, 0.5, 44), size=9, footprint=(2, 2))
-    asset("SideTable", (68.2, 0.5, 44), size=1.6, footprint=(1.6, 1.6))
+    dx0, dx1, dz0, dz1 = DECK
+    cx0, cx1, cz0, cz1 = x0 - 1, x1 + 1, z0 - 1, z1 + 1  # outer edge of the coping
+    solid(box("Deck", (dx1 - dx0, 0.5, cz0 - dz0), ((dx0 + dx1) / 2, 0.25, (dz0 + cz0) / 2)))
+    solid(box("Deck", (dx1 - dx0, 0.5, dz1 - cz1), ((dx0 + dx1) / 2, 0.25, (cz1 + dz1) / 2)))
+    solid(box("Deck", (cx0 - dx0, 0.5, cz1 - cz0), ((dx0 + cx0) / 2, 0.25, cz)))
+    solid(box("Deck", (dx1 - cx1, 0.5, cz1 - cz0), ((cx1 + dx1) / 2, 0.25, cz)))
+    ex = (cx1 + dx1) / 2  # middle of the wide east deck
+    for z in (cz - 6, cz + 6):  # feet towards the water
+        asset("Lounger", (ex, 0.5, z), yaw=270, size=7, fit="length", footprint=(7.1, 2.8))
+    asset("Umbrella", (ex, 0.5, cz), size=9, footprint=(2, 2))
+    asset("SideTable", (ex + 3, 0.5, cz), size=1.6, footprint=(1.6, 1.6))
 
 
 def garden():
@@ -732,7 +676,7 @@ def upgrades():
         asset("BBQIsland", (44, 0, 18), size=10, fit="length", footprint=(10.2, 3.8))
     with tier(5):  # Luxury: a sports car on the driveway, a daybed on the pool deck, a bronze sculpture
         asset("SportsCar", (-50, 0.3, 74), yaw=180, size=15, fit="length", footprint=(6.5, 15.5))
-        asset("Daybed", (50, 0.5, 56.5), size=7, fit="length", footprint=(7.2, 6.4))
+        asset("Daybed", (50, 0.5, 60.5), size=7, fit="length", footprint=(7.2, 6.4))
         asset("Sculpture", (-20, 0, 50), size=7, footprint=(3, 3))
     with tier(6):  # Legend: rooftop terrace with a glass railing and loungers, a golden trophy statue on the lawn
         y = 18.25  # top of the roof gravel; the railing stands on the slab edge (18.2)

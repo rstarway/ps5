@@ -122,7 +122,8 @@ local function fillTerrain(origin)
 		local pz0, pz1 = pool:GetAttribute("Z0"), pool:GetAttribute("Z1")
 		local bottom, surface = pool:GetAttribute("Bottom"), pool:GetAttribute("Surface")
 		local center = origin + Vector3.new((px0 + px1) / 2, 0, (pz0 + pz1) / 2)
-		terrain:FillBlock(CFrame.new(center + Vector3.new(0, -3, 0)), Vector3.new(px1 - px0 + 2, 6, pz1 - pz0 + 2), M.Air)
+		-- вырезаем глубоко: полузаполненный воксель под дном поднял бы грунт выше плиток
+		terrain:FillBlock(CFrame.new(center + Vector3.new(0, -6, 0)), Vector3.new(px1 - px0 + 2, 12, pz1 - pz0 + 2), M.Air)
 		terrain:FillBlock(CFrame.new(center + Vector3.new(0, (bottom + surface) / 2, 0)),
 			Vector3.new(px1 - px0, surface - bottom, pz1 - pz0), M.Water)
 	end
@@ -621,15 +622,15 @@ for _, plr in Players:GetPlayers() do
 end
 
 -- Тёплый вечер: солнце только что село, небо ещё светлое, во дворе горят обычные тёплые лампы
-Lighting.ClockTime = 17.4
+Lighting.ClockTime = 18.05
 Lighting.GeographicLatitude = 25
-Lighting.Brightness = 2.5
+Lighting.Brightness = 1.8
 Lighting.Ambient = rgb(46, 44, 52)
 Lighting.OutdoorAmbient = rgb(128, 118, 120)
 Lighting.EnvironmentDiffuseScale = 0.55
 Lighting.EnvironmentSpecularScale = 0.7
 Lighting.ShadowSoftness = 0.25
-Lighting.ExposureCompensation = 0.25
+Lighting.ExposureCompensation = 0.15
 local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 atmosphere.Density = 0.32
 atmosphere.Offset = 0.12
