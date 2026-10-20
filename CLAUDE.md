@@ -18,6 +18,12 @@
 `blender/` и вшит в код как данные (`src/shared/PS5/Assets/*.luau`, `src/apps/*/art.luau`),
 собирается в рантайме через EditableMesh/EditableImage.
 
+## Репозиторий
+
+- Рабочий репо: `origin` → https://github.com/rstarway/ps5 (ветка `main`), коммитим и пушим сюда.
+- Оригинал: `upstream` → https://github.com/bullkaesh/Playstation5-roblox-simulator (организация;
+  текущий токен `gh` туда не пускает — организация запрещает fine-grained токены сроком > 366 дней).
+
 ## Как запускать и тестировать
 
 - Синхронизация: Rojo 7.6.1 (`rokit.toml`). `rojo serve` + плагин Rojo в Studio → Connect.
