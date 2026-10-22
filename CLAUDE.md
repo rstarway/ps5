@@ -158,3 +158,13 @@ PointLight/SpotLight тёплых тонов, лампы/окна — Glass ил
   Hunyuan: готовы PottedOlive и Lavender (забрать), очков почти нет — CherryTree, HotTub, BBQIsland, SportsCar, Daybed,
   Sculpture, TrophyStatue позже. Тестовое место Studio — копия в scratchpad (PS5Test.rbxlx) с модулем ServerStorage._AssetImport.
 
+- **2026-10-21** — «Белое» растение в кашпо было из-за сети: Studio не мог скачать текстуры (HttpError Timedout/SslConnectFail),
+  с сетью оно зелёное. ShadeTree, Boxwood, Grass перезалиты с `--split` (3 меша по ~50 тыс. треугольников, размеры как раньше).
+  Путь старт → загрузка → интро → двор → дом → PS5 → пользователь → главный экран снова проверен.
+  Грабли Studio MCP: окно Studio само сворачивается — тогда viewport серый и ввод не доходит (разворачивать через
+  ShowWindow/SetForegroundWindow); `user_keyboard_input` перестал доходить до игры — подсказку PS5 жать из `execute_luau` (Client)
+  `ProximityPrompt:InputHoldBegin()/InputHoldEnd()`, Enter в меню — `SendKeys` из PowerShell при Studio на переднем плане.
+  Модели с Tier > 1 в зоне — пустые Model без мешей до нужного уровня (это норма, не баг импорта).
+  Hunyuan: PottedOlive (v0) и Lavender забраны, но не в игре. Олива в Roblox бледно-кремовая (в Blender тёмно-зелёная; текстуры,
+  карты и AlphaMode в порядке — причина не найдена), лаванда — все 3 варианта пустые «чаши» колосьев. Кандидаты лежат локально
+  в `assets/hunyuan/cand/` (не в git). Решить: перегенерировать лаванду / заменить / сделать в Blender; разобраться с оливой.
